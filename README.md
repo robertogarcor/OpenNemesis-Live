@@ -29,6 +29,9 @@ frontend/          # Cliente web
 
 ## Setup
 
+### Requisitos Previos
+- Python 3.10+ con entorno virtual (`venv`)
+
 ```bash
 # Crear entorno virtual
 python3 -m venv venv
@@ -44,7 +47,7 @@ cp .env.local.example .env.local
 # Editar .env.local con tus credenciales
 
 # Iniciar agente
-python -m livekit_agent.agent
+python main.py dev
 ```
 
 ## Documentación
