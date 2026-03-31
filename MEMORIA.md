@@ -12,7 +12,6 @@ Asistente de voz multimodal basado en LiveKit.
 - **skills/loader.py**: Sistema de skills GOG
 - **main.py**: Entry point
 - **livekit_agent/status.py**: Verificación de servicios
-- **frontend/**: Cliente web Next.js basado en agent-starter-embed
 
 ### Stack Tecnológico
 - Python 3.10+ con venv
@@ -20,7 +19,6 @@ Asistente de voz multimodal basado en LiveKit.
 - Google Gemini (gemini-2.5-flash-native-audio-latest)
 - SQLite (aiosqlite)
 - GOG CLI para Google Workspace
-- Next.js 15 (Frontend)
 
 ## Herramientas Disponibles
 
@@ -48,7 +46,6 @@ El agente dispone de 4 tools:
 | Gemini | ✅ Configurado |
 | Tools (4) | ✅ Disponibles |
 | GOG | ✅ Autenticado |
-| Frontend | ✅ Configurado (Next.js) |
 
 ## Documentación
 - SPEC.md: Especificaciones del proyecto
@@ -58,7 +55,8 @@ El agente dispone de 4 tools:
 
 ## Próximos Pasos
 
-1. Desplegar en Vercel
-2. Probar integración frontend + agente
-3. Configurar dominio personalizado (opcional)
+1. Crear cliente web basado en agent-starter-embed
+2. Desplegar en Vercel
+3. Probar integración
+4. Inicializar git - rama main
 
