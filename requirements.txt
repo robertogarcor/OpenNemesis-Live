@@ -1,0 +1,27 @@
+# OpenNemesis-Live Dependencies
+
+# Core
+python-dotenv>=1.0.0
+nest-asyncio>=1.6.0
+
+# Configuration
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# LiveKit Agents SDK
+livekit>=1.0.0
+livekit-agents>=1.0.0
+websockets>=12.0
+
+# Google Gemini (LiveKit Plugin)
+livekit-plugins-google>=1.0.0
+
+# Google Gemini (API)
+google-genai>=0.8.0
+
+# Utilities
+ddgs>=0.2.0
+requests>=2.31.0
+
+# Database
+aiosqlite>=0.19.0

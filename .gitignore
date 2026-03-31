@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Data
+data/*.db
+data/conversations.db
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# Binaries
+bin/*
+!bin/gogcli/
+bin/gogcli/*
+!bin/gogcli/gog
+
+# Credentials (OAuth, API keys, etc.)
+credentials/
