@@ -24,6 +24,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 # Agent Configuration
 AGENT_VOICE = os.getenv("AGENT_VOICE", "sulafat")
 AGENT_TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0.8"))
+LIVEKIT_AGENT_NAME = os.getenv("LIVEKIT_AGENT_NAME", "")
 
 # GOG CLI Configuration (Optional)
 GOG_ACCOUNT = os.getenv("GOG_ACCOUNT", "")
