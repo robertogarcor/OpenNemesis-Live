@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 
 logger = logging.getLogger("OpenNemesis.DB")
 
-DB_PATH = Path("data/conversations.db")
+DB_PATH = Path(__file__).parent / "conversations.db"
 
 # Pool de conexiones (simple - una conexión por operación)
 _db_connection: Optional[aiosqlite.Connection] = None
@@ -201,9 +201,12 @@ def format_history_for_context(messages: list, max_messages: int = 20) -> str:
     if history_lines:
         return "\n".join([
             "",
-            "=== HISTORIAL DE CONVERSACIÓN ANTERIOR ===",
+            "=== INFORMACIÓN DE CONVERSACIONES ANTERIORES ===",
+            "IMPORTANTE: El usuario ha tenido conversaciones anteriores contigo.",
+            "Usa esta información para personalizar tu respuesta.",
+            "",
             *history_lines,
-            "==========================================="
+            "===================================================="
         ])
     
     return ""

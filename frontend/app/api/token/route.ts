@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { AccessToken, type AccessTokenOptions, type VideoGrant } from 'livekit-server-sdk';
-import { RoomConfiguration } from '@livekit/protocol';
 
 type ConnectionDetails = {
   serverUrl: string;
   roomName: string;
   participantName: string;
   participantToken: string;
+  userId: string;
 };
 
 // NOTE: you are expected to define the following environment variables in `.env.local`:
@@ -20,7 +20,7 @@ export const revalidate = 0;
 export async function POST(req: Request) {
   if (process.env.NODE_ENV !== 'development') {
     throw new Error(
-      'THIS API ROUTE IS INSECURE. DO NOT USE THIS ROUTE IN PRODUCTION WITHOUT AN AUTHENTICATION LAYER.'
+      'THIS API ROUTE IS INSECURE. DO NOT USE THIS API ROUTE IN PRODUCTION WITHOUT AN AUTHENTICATION LAYER.'
     );
   }
 
@@ -35,21 +35,25 @@ export async function POST(req: Request) {
       throw new Error('LIVEKIT_API_SECRET is not defined');
     }
 
-    // Parse room config from request body.
-    const body = await req.json();
-    // Recreate the RoomConfiguration object from JSON object.
-    const roomConfig = RoomConfiguration.fromJson(body?.room_config, { ignoreUnknownFields: true });
+    // Get userId from request body (sent by frontend)
+    let userId = 'default-user';
+    try {
+      const body = await req.json();
+      userId = body.userId || userId;
+    } catch {
+      // No body provided, use default
+    }
 
-    // Generate participant token
+    // Generate participant token with userId in metadata
     const participantName = 'user';
-    const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
+    const participantIdentity = userId;
     const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
 
-    const participantToken = await createParticipantToken(
-      { identity: participantIdentity, name: participantName },
-      roomName,
-      roomConfig
-    );
+    const participantToken = await createParticipantToken({
+      identity: participantIdentity,
+      name: participantName,
+      metadata: JSON.stringify({ user_id: userId }),
+    }, roomName);
 
     // Return connection details
     const data: ConnectionDetails = {
@@ -57,6 +61,7 @@ export async function POST(req: Request) {
       roomName,
       participantName,
       participantToken,
+      userId,
     };
     const headers = new Headers({
       'Cache-Control': 'no-store',
@@ -72,8 +77,7 @@ export async function POST(req: Request) {
 
 function createParticipantToken(
   userInfo: AccessTokenOptions,
-  roomName: string,
-  roomConfig: RoomConfiguration
+  roomName: string
 ): Promise<string> {
   const at = new AccessToken(API_KEY, API_SECRET, {
     ...userInfo,
@@ -87,10 +91,6 @@ function createParticipantToken(
     canSubscribe: true,
   };
   at.addGrant(grant);
-
-  if (roomConfig) {
-    at.roomConfig = roomConfig;
-  }
 
   return at.toJwt();
 }

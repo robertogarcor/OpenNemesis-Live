@@ -11,7 +11,7 @@ import { ViewController } from '@/components/app/view-controller';
 import { Toaster } from '@/components/ui/sonner';
 import { useAgentErrors } from '@/hooks/useAgentErrors';
 import { useDebugMode } from '@/hooks/useDebug';
-import { getSandboxTokenSource } from '@/lib/utils';
+import { useUserId } from '@/hooks/useUserId';
 
 const IN_DEVELOPMENT = process.env.NODE_ENV !== 'production';
 
@@ -27,11 +27,33 @@ interface AppProps {
 }
 
 export function App({ appConfig }: AppProps) {
+  const userId = useUserId();
+  
   const tokenSource = useMemo(() => {
-    return typeof process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT === 'string'
-      ? getSandboxTokenSource(appConfig)
-      : TokenSource.endpoint('/api/token');
-  }, [appConfig]);
+    if (!userId) {
+      return TokenSource.endpoint('/api/token');
+    }
+    
+    return TokenSource.custom(async () => {
+      const url = new URL('/api/token', window.location.origin);
+      
+      try {
+        const res = await fetch(url.toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: userId,
+          }),
+        });
+        return await res.json();
+      } catch (error) {
+        console.error('Error fetching connection details:', error);
+        throw new Error('Error fetching connection details!');
+      }
+    });
+  }, [userId]);
 
   const session = useSession(
     tokenSource,

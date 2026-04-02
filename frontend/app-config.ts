@@ -54,7 +54,7 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   audioVisualizerColorDark: '#818cf8',
 
   // agent dispatch configuration
-  agentName: process.env.AGENT_NAME ?? undefined,
+  agentName: 'open-nemesis',
 
   // LiveKit Cloud Sandbox configuration
   sandboxId: undefined,
