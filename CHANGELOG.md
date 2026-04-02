@@ -1,6 +1,9 @@
 # Changelog
 
+## [2026-04-02]
+- feat: add user identification and conversation history (85082eb)
 ## [2026-03-31]
+- docs: update MEMORIA with frontend info (a837af0)
 - feat: add LiveKit React frontend (agent-starter-react) (9e04752)
 - docs: update CHANGELOG (bf03e35)
 - docs: add Python venv requirement in setup (baf4fee)
