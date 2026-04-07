@@ -1,13 +1,12 @@
 # Changelog
 
 ## [2026-04-07]
-- feat: add chat-web popup UI inspired by embed (uncommitted)
-- fix: stabilize LiveKit worker startup timeouts (uncommitted)
-- fix: text replies over data channel for chat-web (uncommitted)
-- fix: prefer screen share video input over camera (uncommitted)
-- ui: add local camera/screen preview tiles and tooltips (uncommitted)
-
+- docs: añadir comando gog (ba53976)
+- docs: actualizar memoria y readme (5116afa)
+- feat(chat): mejorar widget y data (0809aa1)
 ## [2026-04-02]
+- feat: add chat-web lightweight widget with screen sharing (0493d70)
+- docs: update CHANGELOG (909a699)
 - feat: add user identification and conversation history (85082eb)
 ## [2026-03-31]
 - docs: update MEMORIA with frontend info (a837af0)
