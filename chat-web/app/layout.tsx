@@ -1,3 +1,5 @@
+import './globals.css';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
@@ -6,7 +8,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>OpenNemesis Chat</title>
       </head>
-      <body style={{ margin: 0, fontFamily: 'system-ui, sans-serif' }}>
+      <body className="m-0 font-[ui-sans-serif,system-ui]">
         {children}
       </body>
     </html>

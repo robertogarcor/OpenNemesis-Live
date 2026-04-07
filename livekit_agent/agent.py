@@ -78,6 +78,7 @@ class AssistantAgent(Agent):
 
 async def my_agent(ctx: agents.JobContext):
     logger.info(f"User connected to room: {ctx.room.name}")
+    logger.info(f"Room participants: {list(ctx.room.remote_participants.keys())}")
     
     user_id = get_user_id(ctx)
     logger.info(f"User identifier: {user_id}")
@@ -112,60 +113,131 @@ async def my_agent(ctx: agents.JobContext):
             instructions=session_instructions,
         ),
     )
+
+    async def publish_chat_message(role: str, text: str) -> None:
+        payload = json.dumps({"type": "chat", "role": role, "text": text})
+        try:
+            await ctx.room.local_participant.publish_data(payload, reliable=True)
+        except Exception as e:
+            logger.warning(f"Failed to publish data message: {e}")
+
+    async def handle_text_input(text: str) -> None:
+        cleaned = text.strip()
+        if not cleaned:
+            return
+        await save_message(user_id, "user", cleaned)
+        await session.generate_reply(user_input=cleaned)
     
     # Registrar eventos para debug
     @session.on("user_input_transcribed")
     def on_user_speech(ev):
-        logger.info(f"USER SPEECH: {ev.text[:50]}...")
+        logger.info(f"USER SPEECH DETECTED: {ev.text}")
         asyncio.create_task(save_message(user_id, "user", ev.text))
     
     @session.on("conversation_item_added")
     def on_conversation_item(ev):
-        logger.info(f"CONVERSATION ITEM: {ev.item.type} - {ev.item.text_content[:50] if ev.item.text_content else 'N/A'}...")
+        logger.info(
+            f"CONVERSATION ITEM: {ev.item.type} - {ev.item.text_content[:100] if ev.item.text_content else 'N/A'}..."
+        )
         if ev.item.text_content:
             asyncio.create_task(save_message(user_id, "assistant", ev.item.text_content))
+            if getattr(ev.item, "role", None) == "assistant":
+                asyncio.create_task(publish_chat_message("assistant", ev.item.text_content))
     
     logger.info("Session created, starting...")
     
-    try:
-        await session.start(
-            room=ctx.room,
-            agent=agent,
-            room_options=room_io.RoomOptions(
-                audio_input=room_io.AudioInputOptions(
-                    noise_cancellation=lambda params: noise_cancellation.BVCTelephony() if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP else noise_cancellation.BVC(), 
-                ),
-                video_input=True,
+    logger.info("Starting session.start...")
+    await session.start(
+        room=ctx.room,
+        agent=agent,
+        room_options=room_io.RoomOptions(
+            audio_input=room_io.AudioInputOptions(
+                noise_cancellation=lambda params: noise_cancellation.BVCTelephony() if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP else noise_cancellation.BVC(), 
             ),
-        )
-        logger.info("Session started successfully!")
+            video_input=True,
+        ),
+    )
+    logger.info("Session started successfully!")
+
+    def _is_linked_participant(participant: rtc.RemoteParticipant | None) -> bool:
+        try:
+            linked = session.room_io.linked_participant
+            if linked is None or participant is None:
+                return True
+            return linked.identity == participant.identity
+        except Exception:
+            return True
+
+    def _unsubscribe_camera_tracks(participant: rtc.RemoteParticipant) -> None:
+        for pub in participant.track_publications.values():
+            if pub.source == rtc.TrackSource.SOURCE_CAMERA:
+                pub.set_subscribed(False)
+
+    def _resubscribe_camera_tracks(participant: rtc.RemoteParticipant) -> None:
+        for pub in participant.track_publications.values():
+            if pub.source == rtc.TrackSource.SOURCE_CAMERA:
+                pub.set_subscribed(True)
+
+    @ctx.room.on("track_subscribed")
+    def on_track_subscribed(
+        track: rtc.RemoteTrack,
+        publication: rtc.RemoteTrackPublication,
+        participant: rtc.RemoteParticipant,
+    ) -> None:
+        if not _is_linked_participant(participant):
+            return
+        if publication.source == rtc.TrackSource.SOURCE_SCREENSHARE:
+            logger.info("Screen share subscribed; preferring screen share over camera")
+            _unsubscribe_camera_tracks(participant)
+
+    @ctx.room.on("track_unpublished")
+    def on_track_unpublished(
+        publication: rtc.RemoteTrackPublication,
+        participant: rtc.RemoteParticipant,
+    ) -> None:
+        if not _is_linked_participant(participant):
+            return
+        if publication.source == rtc.TrackSource.SOURCE_SCREENSHARE:
+            logger.info("Screen share unpublished; resubscribing camera")
+            _resubscribe_camera_tracks(participant)
+
+    @ctx.room.on("data_received")
+    def on_data_received(packet: rtc.DataPacket):
+        try:
+            payload = json.loads(packet.data.decode("utf-8"))
+        except Exception:
+            return
+
+        if payload.get("type") != "chat":
+            return
+
+        if payload.get("role") == "user":
+            text = payload.get("text", "")
+            asyncio.create_task(handle_text_input(text))
+    
+    # Obtener el identity correcto del participante después de conectar
+    logger.info("Checking remote participants...")
+    for participant in ctx.room.remote_participants.values():
+        logger.info(f"Found participant: {participant.identity}")
+        correct_user_id = participant.identity
+        logger.info(f"Correct user identity: {correct_user_id}")
         
-        # Obtener el identity correcto del participante después de conectar
-        # El primer participante remote es el usuario
-        for participant in ctx.room.remote_participants.values():
-            correct_user_id = participant.identity
-            logger.info(f"Correct user identity: {correct_user_id}")
+        # Recargar historial con el user_id correcto
+        if db_initialized and correct_user_id != user_id:
+            logger.info("Reloading history with correct user_id...")
+            history = await get_history(correct_user_id, limit=MAX_HISTORY_CONTEXT)
+            logger.info(f"Loaded {len(history)} messages from history for user: {correct_user_id}")
             
-            # Recargar historial con el user_id correcto
-            if db_initialized and correct_user_id != user_id:
-                logger.info("Reloading history with correct user_id...")
-                history = await get_history(correct_user_id, limit=MAX_HISTORY_CONTEXT)
-                logger.info(f"Loaded {len(history)} messages from history for user: {correct_user_id}")
-                
-                # Actualizar el user_id del agent
-                agent.user_id = correct_user_id
-                user_id = correct_user_id
-                
-                # Regenerar instrucciones con el historial correcto
-                history_context = format_history_for_context(history, max_messages=MAX_HISTORY_CONTEXT)
-                if history_context:
-                    logger.info("Sending history context to agent...")
-                    await session.generate_reply(instructions=history_context)
-                break
-        
-    except Exception as e:
-        logger.error(f"session.start failed: {e}", exc_info=True)
-        raise
+            # Actualizar el user_id del agent
+            agent.user_id = correct_user_id
+            user_id = correct_user_id
+            
+            # Regenerar instrucciones con el historial correcto
+            history_context = format_history_for_context(history, max_messages=MAX_HISTORY_CONTEXT)
+            if history_context:
+                logger.info("Sending history context to agent...")
+                await session.generate_reply(instructions=history_context)
+            break
     
     logger.info(f"Agent session started for user: {user_id}")
 
@@ -183,4 +255,11 @@ if __name__ == "__main__":
     logger.info(f"Tools: {[t.__name__ for t in AVAILABLE_TOOLS]}")
     logger.info("Starting LiveKit agent worker...")
     
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=my_agent))
+    agents.cli.run_app(
+        agents.WorkerOptions(
+            entrypoint_fnc=my_agent,
+            initialize_process_timeout=60.0,
+            shutdown_process_timeout=30.0,
+            num_idle_processes=1,
+        )
+    )

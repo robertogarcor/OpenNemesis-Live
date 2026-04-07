@@ -1,0 +1,134 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+:root {
+  --fg0: #0b1020;
+  --fg1: #252a3a;
+  --fg2: #3b4157;
+  --fg3: #59607a;
+  --fg4: #7b839f;
+
+  --fgSerious: #db1b06;
+  --fgSuccess: #006430;
+  --fgModerate: #a65006;
+  --fgAccent: #0b5fff;
+
+  --bg1: #fbfbfa;
+  --bg2: #f4f5f7;
+  --bg3: #e7e9ee;
+
+  --bgSerious: #fae6e6;
+  --bgSerious2: #ffcdc7;
+  --bgSuccess: #d1fadf;
+  --bgModerate: #faedd1;
+  --bgAccent: #d7e6ff;
+  --bgAccentPrimary: #eef4ff;
+
+  --separator1: #dbdde3;
+  --separator2: #c2c6d2;
+  --separatorAccent: #b3ccff;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: var(--fgAccent);
+  --primary-hover: #094cd0;
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: var(--bg2);
+  --muted-foreground: oklch(0.556 0 0);
+  --border: var(--separator1);
+  --ring: oklch(0.708 0 0);
+}
+
+@theme inline {
+  --color-fg0: var(--fg0);
+  --color-fg1: var(--fg1);
+  --color-fg2: var(--fg2);
+  --color-fg3: var(--fg3);
+  --color-fg4: var(--fg4);
+  --color-fgSerious: var(--fgSerious);
+  --color-fgSuccess: var(--fgSuccess);
+  --color-fgModerate: var(--fgModerate);
+  --color-fgAccent: var(--fgAccent);
+
+  --color-bg1: var(--bg1);
+  --color-bg2: var(--bg2);
+  --color-bg3: var(--bg3);
+  --color-bgSerious: var(--bgSerious);
+  --color-bgSerious2: var(--bgSerious2);
+  --color-bgSuccess: var(--bgSuccess);
+  --color-bgModerate: var(--bgModerate);
+  --color-bgAccent: var(--bgAccent);
+  --color-bgAccentPrimary: var(--bgAccentPrimary);
+
+  --color-separator1: var(--separator1);
+  --color-separator2: var(--separator2);
+  --color-separatorAccent: var(--separatorAccent);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --color-destructive: var(--bgSerious);
+  --color-destructive-hover: var(--bgSerious2);
+  --color-destructive-foreground: var(--fgSerious);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    @apply text-foreground bg-[transparent];
+  }
+}
+
+@layer utilities {
+  .scrollbar-on-hover {
+    scrollbar-width: thin;
+    scrollbar-gutter: stable both-edges;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s linear;
+  }
+
+  .scrollbar-on-hover:hover {
+    scrollbar-color: var(--fg4) transparent;
+  }
+
+  .scrollbar-on-hover::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 8px;
+  }
+
+  .scrollbar-on-hover::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    transition: background-color 0.2s linear;
+    border-radius: 999px;
+  }
+
+  .scrollbar-on-hover:hover::-webkit-scrollbar-thumb {
+    background-color: var(--fg4);
+  }
+
+  .scrollbar-on-hover::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+}
