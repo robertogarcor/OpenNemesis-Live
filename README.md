@@ -51,6 +51,14 @@ cp .env.local.example .env.local
 python main.py dev
 ```
 
+### GOG (Gmail/Calendar)
+
+Para activar o renovar el token:
+
+```bash
+./bin/gogcli/gog auth add you@gmail.com --services gmail,calendar
+```
+
 ## chat-web (widget embebido)
 
 ```bash
