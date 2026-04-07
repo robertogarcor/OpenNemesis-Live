@@ -18,6 +18,7 @@ livekit_agent/     # Agente de voz
 tools/             # Herramientas disponibles
 bin/               # Binarios (GOG CLI)
 frontend/          # Cliente web
+chat-web/          # Widget embebido (popup)
 ```
 
 ## Herramientas
@@ -49,6 +50,16 @@ cp .env.local.example .env.local
 # Iniciar agente
 python main.py dev
 ```
+
+## chat-web (widget embebido)
+
+```bash
+cd chat-web
+npm install
+npm run dev
+```
+
+Abre `http://localhost:3000` y conecta el widget.
 
 ## Documentación
 

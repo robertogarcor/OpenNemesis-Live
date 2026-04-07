@@ -13,6 +13,7 @@ Asistente de voz multimodal basado en LiveKit.
 - **main.py**: Entry point
 - **livekit_agent/status.py**: Verificación de servicios
 - **frontend/**: Cliente web Next.js basado en agent-starter-react
+- **chat-web/**: Widget embebido tipo popup (Next.js) inspirado en agent-starter-embed
 
 ### Stack Tecnológico
 - Python 3.10+ con venv
@@ -21,6 +22,7 @@ Asistente de voz multimodal basado en LiveKit.
 - SQLite (aiosqlite)
 - GOG CLI para Google Workspace
 - Next.js 15 + React (Frontend)
+- Tailwind CSS v4 (chat-web)
 
 ## Herramientas Disponibles
 
@@ -35,7 +37,7 @@ El agente dispone de 4 tools:
 
 ## Integración GOG
 
-- **Autenticación**: Completada con `gog login fontflorida1093@gmail.com --services=gmail,calendar`
+- **Autenticación**: `./bin/gogcli/gog auth add fontflorida1093@gmail.com --services gmail,calendar`
 - **Servicios activos**: Gmail, Calendar
 - **Binario**: `bin/gogcli/gog` con permisos de ejecución
 - **Configuración**: GOGCLI_PATH en .env.local
@@ -49,6 +51,15 @@ El agente dispone de 4 tools:
 | Tools (4) | ✅ Disponibles |
 | GOG | ✅ Autenticado |
 | Frontend React | ✅ Configurado |
+| chat-web | ✅ Conectado (popup embebido) |
+
+## chat-web (Estado)
+
+- UI estilo embed con popup, botones y tooltips
+- Texto via DataChannel (cliente -> agente) y respuestas del agente al chat
+- Preview local de camara y screen share
+- Preferencia de screen share en el agente (se desuscribe camara mientras se comparte pantalla)
+- Worker con timeouts ampliados para evitar AssignmentTimeout
 
 ## Documentación
 - SPEC.md: Especificaciones del proyecto
@@ -58,7 +69,6 @@ El agente dispone de 4 tools:
 
 ## Próximos Pasos
 
-1. Probar integración (frontend + agente)
-2. Personalizar más el frontend
+1. Probar chat-web con texto/camara/pantalla
+2. Ajustes finales de UI
 3. Desplegar en Vercel
-
