@@ -188,8 +188,8 @@ async def my_agent(ctx: agents.JobContext):
     # Registrar eventos para debug
     @session.on("user_input_transcribed")
     def on_user_speech(ev):
-        logger.info(f"USER SPEECH DETECTED: {ev.text}")
-        asyncio.create_task(save_message(user_id, "user", ev.text))
+        logger.info(f"USER SPEECH DETECTED: {ev.transcript}")
+        asyncio.create_task(save_message(user_id, "user", ev.transcript))
     
     @session.on("conversation_item_added")
     def on_conversation_item(ev):
