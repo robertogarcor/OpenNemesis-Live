@@ -6,6 +6,8 @@ Punto de entrada: python main.py dev|console
 import asyncio
 import logging
 import json
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 from livekit import agents, rtc
@@ -26,6 +28,7 @@ from data.db import (
     init_db,
     save_message,
     get_history,
+    get_history_with_timestamps,
     format_history_for_context,
 )
 
@@ -34,6 +37,8 @@ load_dotenv()
 logger = logging.getLogger("OpenNemesis-Live.Agent")
 
 MAX_HISTORY_CONTEXT = 20
+TEMPORAL_WINDOW_HOURS = 36
+LOCAL_TZ = ZoneInfo("Europe/Madrid")
 
 
 def get_user_id(ctx: agents.JobContext) -> str:
@@ -76,6 +81,51 @@ class AssistantAgent(Agent):
         await save_message(self.user_id, "assistant", message)
 
 
+def _normalize_dt(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=LOCAL_TZ)
+    return value.astimezone(LOCAL_TZ)
+
+
+def build_temporal_context(messages: list, now: datetime) -> str:
+    if not messages:
+        return ""
+
+    window = timedelta(hours=TEMPORAL_WINDOW_HOURS)
+    recent = []
+    for msg in messages:
+        created_at = _normalize_dt(msg.get("created_at"))
+        if created_at is None:
+            continue
+        if now - created_at <= window:
+            recent.append({**msg, "created_at": created_at})
+
+    if not recent:
+        return ""
+
+    last_user = next((m for m in reversed(recent) if m.get("role") == "user"), None)
+    if not last_user:
+        return ""
+
+    last_time = last_user["created_at"]
+    label = "hoy" if last_time.date() == now.date() else "ayer"
+    content = (last_user.get("content") or "").strip()
+    if len(content) > 200:
+        content = content[:197] + "..."
+
+    return "\n".join(
+        [
+            "",
+            "=== CONTEXTO TEMPORAL (ULTIMAS 36H) ===",
+            "Usa esto solo si aporta contexto a la respuesta.",
+            f"Hablaste con el usuario {label} sobre: {content}",
+            "======================================",
+        ]
+    )
+
+
 async def my_agent(ctx: agents.JobContext):
     logger.info(f"User connected to room: {ctx.room.name}")
     logger.info(f"Room participants: {list(ctx.room.remote_participants.keys())}")
@@ -92,18 +142,25 @@ async def my_agent(ctx: agents.JobContext):
         logger.warning(f"DB init skipped: {e}")
     
     history_context = ""
+    temporal_context = ""
     if db_initialized:
         try:
             history = await get_history(user_id, limit=MAX_HISTORY_CONTEXT)
+            history_with_ts = await get_history_with_timestamps(
+                user_id, limit=MAX_HISTORY_CONTEXT
+            )
             logger.info(f"Loaded {len(history)} messages from history")
             history_context = format_history_for_context(history, max_messages=MAX_HISTORY_CONTEXT)
+            temporal_context = build_temporal_context(
+                history_with_ts, now=datetime.now(LOCAL_TZ)
+            )
         except Exception as e:
             logger.warning(f"Could not load history: {e}")
     
     agent = AssistantAgent(user_id=user_id)
     logger.info("Agent created")
     
-    session_instructions = history_context if history_context else ""
+    session_instructions = "".join([history_context, temporal_context]).strip()
     session = AgentSession(
         llm=google.realtime.RealtimeModel(
             api_key=GEMINI_API_KEY,
@@ -150,12 +207,12 @@ async def my_agent(ctx: agents.JobContext):
     await session.start(
         room=ctx.room,
         agent=agent,
-        room_options=room_io.RoomOptions(
-            audio_input=room_io.AudioInputOptions(
-                noise_cancellation=lambda params: noise_cancellation.BVCTelephony() if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP else noise_cancellation.BVC(), 
-            ),
-            video_input=True,
-        ),
+                room_options=room_io.RoomOptions(
+                    audio_input=room_io.AudioInputOptions(
+                        noise_cancellation=lambda params: noise_cancellation.BVCTelephony() if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP else noise_cancellation.BVC(), 
+                    ),
+                    video_input=True,
+                ),
     )
     logger.info("Session started successfully!")
 
@@ -226,6 +283,9 @@ async def my_agent(ctx: agents.JobContext):
         if db_initialized and correct_user_id != user_id:
             logger.info("Reloading history with correct user_id...")
             history = await get_history(correct_user_id, limit=MAX_HISTORY_CONTEXT)
+            history_with_ts = await get_history_with_timestamps(
+                correct_user_id, limit=MAX_HISTORY_CONTEXT
+            )
             logger.info(f"Loaded {len(history)} messages from history for user: {correct_user_id}")
             
             # Actualizar el user_id del agent
@@ -234,9 +294,13 @@ async def my_agent(ctx: agents.JobContext):
             
             # Regenerar instrucciones con el historial correcto
             history_context = format_history_for_context(history, max_messages=MAX_HISTORY_CONTEXT)
-            if history_context:
+            temporal_context = build_temporal_context(
+                history_with_ts, now=datetime.now(LOCAL_TZ)
+            )
+            combined_context = "".join([history_context, temporal_context]).strip()
+            if combined_context:
                 logger.info("Sending history context to agent...")
-                await session.generate_reply(instructions=history_context)
+                await session.generate_reply(instructions=combined_context)
             break
     
     logger.info(f"Agent session started for user: {user_id}")

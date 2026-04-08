@@ -6,8 +6,8 @@ Módulo SQLite async para guardar historial de conversación
 import aiosqlite
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
+from pathlib import Path
 from contextlib import asynccontextmanager
 
 logger = logging.getLogger("OpenNemesis.DB")
@@ -101,6 +101,49 @@ async def get_history(user_id: str, limit: int = 50) -> list:
         return [{"role": m[0], "content": m[1]} for m in rows]
     except Exception as e:
         logger.error(f"✗ Error obteniendo historial: {e}")
+        return []
+
+
+def _parse_created_at(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        try:
+            return datetime.fromisoformat(value.replace(" ", "T"))
+        except ValueError:
+            return None
+
+
+async def get_history_with_timestamps(user_id: str, limit: int = 50) -> list:
+    """Obtiene los últimos N mensajes con timestamps (async)."""
+    global _db_connection
+
+    try:
+        conn = _db_connection or await aiosqlite.connect(DB_PATH)
+        is_local_conn = _db_connection is None
+
+        cursor = await conn.execute(
+            "SELECT role, content, created_at FROM messages WHERE user_id = ? ORDER BY id ASC LIMIT ?",
+            (user_id, limit),
+        )
+
+        rows = await cursor.fetchall()
+
+        if is_local_conn:
+            await conn.close()
+
+        return [
+            {
+                "role": row[0],
+                "content": row[1],
+                "created_at": _parse_created_at(row[2]),
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        logger.error(f"✗ Error obteniendo historial con timestamps: {e}")
         return []
 
 
@@ -210,6 +253,5 @@ def format_history_for_context(messages: list, max_messages: int = 20) -> str:
         ])
     
     return ""
-
 
 
