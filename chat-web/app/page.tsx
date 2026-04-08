@@ -7,14 +7,16 @@ import {
   RoomAudioRenderer,
   RoomContext,
   StartAudio,
+  BarVisualizer,
   VideoTrack,
-  useTracks,
+  useVoiceAssistant,
 } from '@livekit/components-react';
 import {
   ChatTextIcon,
   MicrophoneIcon,
   MicrophoneSlashIcon,
   MonitorArrowUpIcon,
+  InfoIcon,
   PhoneCallIcon,
   PhoneDisconnectIcon,
   VideoCameraIcon,
@@ -53,6 +55,66 @@ function cn(...classes: Array<string | undefined | false | null>) {
 }
 
 const AnimatedButton = motion.create('button');
+
+function AudioVisualizer({
+  agentState,
+  audioTrack,
+  size,
+}: {
+  agentState: string;
+  audioTrack?: any;
+  size: 'small' | 'large';
+}) {
+  const options = size === 'large' ? { minHeight: 16, maxHeight: 120 } : { minHeight: 12, maxHeight: 100 };
+  const barClass = size === 'large'
+    ? 'flex h-20 min-h-[80px] w-auto items-end gap-2'
+    : 'flex h-12 min-h-[48px] w-auto items-end gap-1.5';
+  const barCount = size === 'large' ? 7 : 5;
+  const barTemplateClass = size === 'large'
+    ? 'lk-audio-bar min-h-7 w-3 rounded-full'
+    : 'lk-audio-bar min-h-5 w-2 rounded-full';
+  return (
+    <BarVisualizer
+      barCount={barCount}
+      state={agentState as any}
+      trackRef={audioTrack}
+      options={options}
+      className={barClass}
+    >
+      <span className={barTemplateClass} />
+    </BarVisualizer>
+  );
+}
+
+function VoiceBar({
+  agentState,
+  variant,
+  className,
+}: {
+  agentState: string;
+  variant: 'small' | 'large';
+  className?: string;
+}) {
+  const { audioTrack, state } = useVoiceAssistant();
+  if (!audioTrack) return null;
+  return (
+    <div
+      className={cn(
+        'absolute z-10',
+        className,
+        variant === 'small'
+          ? 'left-3 bottom-3'
+          : 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
+      )}
+    >
+      <AudioVisualizer
+        agentState={(state as string) ?? agentState}
+        audioTrack={audioTrack}
+        size={variant}
+      />
+    </div>
+  );
+}
 
 function Trigger({
   error,
@@ -229,6 +291,8 @@ function ActionBar({
   cam_enabled,
   screen_enabled,
   pending,
+  about_open,
+  on_about_toggle,
   on_toggle_mic,
   on_toggle_cam,
   on_toggle_screen,
@@ -240,12 +304,19 @@ function ActionBar({
   cam_enabled: boolean;
   screen_enabled: boolean;
   pending: boolean;
+  about_open: boolean;
+  on_about_toggle: () => void;
   on_toggle_mic: () => Promise<void>;
   on_toggle_cam: () => Promise<void>;
   on_toggle_screen: () => Promise<void>;
 }) {
   return (
     <div className="relative z-20 mx-2 mb-2 flex flex-col">
+      {about_open && (
+        <div className="absolute bottom-12 right-0 w-[220px] rounded-xl border border-separator1 bg-bg1 p-3 text-xs text-fg2 shadow-lg">
+          Este widget esta inspirado en el embed de LiveKit, con marca OpenNemesis.
+        </div>
+      )}
       <div className="flex flex-row justify-between gap-1">
         <div className="flex gap-1">
           <ToggleButton
@@ -283,19 +354,34 @@ function ActionBar({
         </div>
 
         {can_chat && (
-          <button
-            type="button"
-            aria-label="Chat"
-            title="Chat"
-            onClick={() => on_chat_open_change(!chat_open)}
-            className={cn(
-              'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg2 text-fg1 drop-shadow-sm',
-              'transition-colors hover:bg-bg3',
-              chat_open && 'bg-bgAccentPrimary text-fgAccent'
-            )}
-          >
-            <ChatTextIcon weight="bold" size={18} />
-          </button>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              aria-label="Chat"
+              title="Chat"
+              onClick={() => on_chat_open_change(!chat_open)}
+              className={cn(
+                'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg2 text-fg1 drop-shadow-sm',
+                'transition-colors hover:bg-bg3',
+                chat_open && 'bg-bgAccentPrimary text-fgAccent'
+              )}
+            >
+              <ChatTextIcon weight="bold" size={18} />
+            </button>
+            <button
+              type="button"
+              aria-label="About"
+              title="About"
+              onClick={on_about_toggle}
+              className={cn(
+                'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg2 text-fg1 drop-shadow-sm',
+                'transition-colors hover:bg-bg3',
+                about_open && 'bg-bgAccentPrimary text-fgAccent'
+              )}
+            >
+              <InfoIcon weight="bold" size={18} />
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -315,6 +401,7 @@ export default function Page() {
   const [cam_enabled, set_cam_enabled] = React.useState(false);
   const [screen_enabled, set_screen_enabled] = React.useState(false);
   const [chat_open, set_chat_open] = React.useState(false);
+  const [about_open, set_about_open] = React.useState(false);
   const [input_text, set_input_text] = React.useState('');
 
   const local_participant = room.localParticipant;
@@ -380,6 +467,7 @@ export default function Page() {
         { id: crypto.randomUUID(), role: 'system', text: 'Agente en sala.' },
       ]);
     };
+
 
     const on_local_track_published = (publication: { source: Track.Source }) => {
       if (publication.source === Track.Source.Camera) {
@@ -725,15 +813,19 @@ export default function Page() {
                   </div>
                 </div>
 
+                {!chat_open && (
+                  <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                    <VoiceBar agentState={agent_state} variant="large" className="translate-y-2" />
+                  </div>
+                )}
+
                 <div
                   className={cn(
                     'relative mx-2 mt-1 mb-2 h-[124px] overflow-hidden rounded-[14px] border border-separator1/70',
                     'bg-[radial-gradient(120%_120%_at_20%_0%,var(--color-bgAccentPrimary)_0%,transparent_50%),radial-gradient(90%_120%_at_100%_20%,rgba(11,95,255,0.18)_0%,transparent_60%),linear-gradient(180deg,var(--color-bg2)_0%,var(--color-bg1)_100%)]'
                   )}
                 >
-                  <div className="absolute inset-0 grid place-items-center">
-                    <div className="text-fg2 text-xs">Voz en tiempo real</div>
-                  </div>
+                  {chat_open && <VoiceBar agentState={agent_state} variant="small" />}
 
                   <AnimatePresence>
                     {local_camera_track && (
@@ -779,15 +871,6 @@ export default function Page() {
                 <div className="relative flex h-full min-h-0 flex-1 flex-col">
                   <div className="flex min-h-0 flex-1 flex-col">
                     {chat_open && <Transcript messages={messages} />}
-
-                    <div className={cn('px-2', chat_open && 'hidden')}>
-                      <div className="rounded-[20px] border border-separator1 bg-bg2 p-4">
-                        <div className="text-fg1 text-sm font-semibold">Habla o escribe</div>
-                        <div className="text-fg3 mt-1 text-xs">
-                          Este widget esta inspirado en el embed de LiveKit, con marca OpenNemesis.
-                        </div>
-                      </div>
-                    </div>
                   </div>
 
                   <ActionBar
@@ -798,6 +881,8 @@ export default function Page() {
                     cam_enabled={cam_enabled}
                     screen_enabled={screen_enabled}
                     pending={pending_toggle}
+                    about_open={about_open}
+                    on_about_toggle={() => set_about_open((prev) => !prev)}
                     on_toggle_mic={toggle_mic}
                     on_toggle_cam={toggle_cam}
                     on_toggle_screen={toggle_screen}

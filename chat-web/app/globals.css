@@ -132,3 +132,12 @@
     background-color: transparent;
   }
 }
+
+.lk-audio-bar {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(11, 95, 255, 0.85), rgba(11, 95, 255, 0.3));
+}
+
+.lk-audio-bar.lk-highlighted {
+  background: linear-gradient(180deg, rgba(11, 95, 255, 1), rgba(11, 95, 255, 0.45));
+}
