@@ -1,6 +1,9 @@
 # Changelog
 
 ## [2026-04-08]
+- feat(chat): ajustar visualizador (d4d7011)
+- fix(agent): usar transcript en voz (0aedac2)
+- docs: actualizar changelog (1f87c0a)
 - feat(agent): contexto temporal 36h (5e23958)
 ## [2026-04-07]
 - docs: actualizar changelog (b1e0fa0)
