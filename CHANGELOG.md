@@ -1,6 +1,9 @@
 # Changelog
 
+## [2026-04-08]
+- feat(agent): contexto temporal 36h (5e23958)
 ## [2026-04-07]
+- docs: actualizar changelog (b1e0fa0)
 - docs: añadir comando gog (ba53976)
 - docs: actualizar memoria y readme (5116afa)
 - feat(chat): mejorar widget y data (0809aa1)
