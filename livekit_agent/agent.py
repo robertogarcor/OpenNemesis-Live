@@ -26,6 +26,7 @@ from tools.tools import AVAILABLE_TOOLS
 from prompt import get_system_prompt
 from data.db import (
     init_db,
+    close_db,
     save_message,
     get_history,
     get_history_with_timestamps,
@@ -138,6 +139,7 @@ async def my_agent(ctx: agents.JobContext):
         await init_db()
         db_initialized = True
         logger.info("DB initialized")
+        ctx.add_shutdown_callback(close_db)
     except Exception as e:
         logger.warning(f"DB init skipped: {e}")
     
@@ -183,7 +185,14 @@ async def my_agent(ctx: agents.JobContext):
         if not cleaned:
             return
         await save_message(user_id, "user", cleaned)
-        await session.generate_reply(user_input=cleaned)
+        await session.generate_reply(
+            user_input=cleaned,
+            input_modality="text",
+            instructions=(
+                "Si hay entrada visual activa (camara o pantalla), usala tambien en esta respuesta por texto. "
+                "Solo indica que no ves imagen si realmente no llega video."
+            ),
+        )
     
     # Registrar eventos para debug
     @session.on("user_input_transcribed")
@@ -215,48 +224,6 @@ async def my_agent(ctx: agents.JobContext):
                 ),
     )
     logger.info("Session started successfully!")
-
-    def _is_linked_participant(participant: rtc.RemoteParticipant | None) -> bool:
-        try:
-            linked = session.room_io.linked_participant
-            if linked is None or participant is None:
-                return True
-            return linked.identity == participant.identity
-        except Exception:
-            return True
-
-    def _unsubscribe_camera_tracks(participant: rtc.RemoteParticipant) -> None:
-        for pub in participant.track_publications.values():
-            if pub.source == rtc.TrackSource.SOURCE_CAMERA:
-                pub.set_subscribed(False)
-
-    def _resubscribe_camera_tracks(participant: rtc.RemoteParticipant) -> None:
-        for pub in participant.track_publications.values():
-            if pub.source == rtc.TrackSource.SOURCE_CAMERA:
-                pub.set_subscribed(True)
-
-    @ctx.room.on("track_subscribed")
-    def on_track_subscribed(
-        track: rtc.RemoteTrack,
-        publication: rtc.RemoteTrackPublication,
-        participant: rtc.RemoteParticipant,
-    ) -> None:
-        if not _is_linked_participant(participant):
-            return
-        if publication.source == rtc.TrackSource.SOURCE_SCREENSHARE:
-            logger.info("Screen share subscribed; preferring screen share over camera")
-            _unsubscribe_camera_tracks(participant)
-
-    @ctx.room.on("track_unpublished")
-    def on_track_unpublished(
-        publication: rtc.RemoteTrackPublication,
-        participant: rtc.RemoteParticipant,
-    ) -> None:
-        if not _is_linked_participant(participant):
-            return
-        if publication.source == rtc.TrackSource.SOURCE_SCREENSHARE:
-            logger.info("Screen share unpublished; resubscribing camera")
-            _resubscribe_camera_tracks(participant)
 
     @ctx.room.on("data_received")
     def on_data_received(packet: rtc.DataPacket):
