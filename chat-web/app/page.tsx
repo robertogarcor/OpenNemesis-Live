@@ -63,16 +63,27 @@ function AudioVisualizer({
 }: {
   agentState: string;
   audioTrack?: any;
-  size: 'small' | 'large';
+  size: 'small' | 'medium' | 'large';
 }) {
-  const options = size === 'large' ? { minHeight: 16, maxHeight: 120 } : { minHeight: 12, maxHeight: 100 };
-  const barClass = size === 'large'
-    ? 'flex h-20 min-h-[80px] w-auto items-end gap-2'
-    : 'flex h-12 min-h-[48px] w-auto items-end gap-1.5';
-  const barCount = size === 'large' ? 7 : 5;
-  const barTemplateClass = size === 'large'
-    ? 'lk-audio-bar min-h-7 w-3 rounded-full'
-    : 'lk-audio-bar min-h-5 w-2 rounded-full';
+  const options =
+    size === 'large'
+      ? { minHeight: 16, maxHeight: 120 }
+      : size === 'medium'
+        ? { minHeight: 10, maxHeight: 80 }
+        : { minHeight: 12, maxHeight: 100 };
+  const barClass =
+    size === 'large'
+      ? 'flex h-20 min-h-[80px] w-auto items-end gap-2'
+      : size === 'medium'
+        ? 'flex h-11 min-h-[44px] w-auto items-end gap-1.5'
+        : 'flex h-12 min-h-[48px] w-auto items-end gap-1.5';
+  const barCount = size === 'large' ? 7 : size === 'medium' ? 5 : 5;
+  const barTemplateClass =
+    size === 'large'
+      ? 'lk-audio-bar min-h-7 w-3 rounded-full'
+      : size === 'medium'
+        ? 'lk-audio-bar min-h-4 w-2 rounded-full'
+        : 'lk-audio-bar min-h-5 w-2 rounded-full';
   return (
     <BarVisualizer
       barCount={barCount}
@@ -114,6 +125,12 @@ function VoiceBar({
       />
     </div>
   );
+}
+
+function InlineVoiceBar({ agentState }: { agentState: string }) {
+  const { audioTrack, state } = useVoiceAssistant();
+  if (!audioTrack) return null;
+  return <AudioVisualizer agentState={(state as string) ?? agentState} audioTrack={audioTrack} size="medium" />;
 }
 
 function Trigger({
@@ -403,6 +420,8 @@ export default function Page() {
   const [chat_open, set_chat_open] = React.useState(false);
   const [about_open, set_about_open] = React.useState(false);
   const [input_text, set_input_text] = React.useState('');
+  const [ui_notice, set_ui_notice] = React.useState<string | null>(null);
+  const notice_timeout_ref = React.useRef<number | null>(null);
 
   const local_participant = room.localParticipant;
   const local_camera_track = React.useMemo(() => {
@@ -417,6 +436,15 @@ export default function Page() {
     if (!publication) return undefined;
     return { participant: local_participant, publication, source: Track.Source.ScreenShare };
   }, [local_participant, screen_enabled]);
+  const active_local_visual_track = React.useMemo(() => {
+    if (screen_enabled && local_screen_track) {
+      return { trackRef: local_screen_track, title: 'Compartir pantalla' };
+    }
+    if (cam_enabled && local_camera_track) {
+      return { trackRef: local_camera_track, title: 'Camara' };
+    }
+    return null;
+  }, [screen_enabled, cam_enabled, local_screen_track, local_camera_track]);
 
   const [messages, set_messages] = React.useState<UiMessage[]>([
     {
@@ -425,6 +453,21 @@ export default function Page() {
       text: 'OpenNemesis listo. Pulsa para conectar.',
     },
   ]);
+
+  const push_system_message = React.useCallback((text: string) => {
+    set_messages((prev) => [...prev, { id: crypto.randomUUID(), role: 'system', text }]);
+  }, []);
+
+  const show_notice = React.useCallback((text: string) => {
+    if (notice_timeout_ref.current) {
+      window.clearTimeout(notice_timeout_ref.current);
+    }
+    set_ui_notice(text);
+    notice_timeout_ref.current = window.setTimeout(() => {
+      set_ui_notice(null);
+      notice_timeout_ref.current = null;
+    }, 3500);
+  }, []);
 
   const handle_toggle_popup = () => {
     if (is_animating.current) return;
@@ -447,25 +490,22 @@ export default function Page() {
     const on_disconnected = () => {
       set_agent_state('disconnected');
       set_popup_open(false);
+      show_notice('Se perdio la conexion con la sala.');
+      push_system_message('Se perdio la conexion con la sala. Reintenta.');
       set_chat_open(false);
+      set_about_open(false);
     };
 
     const on_connected = () => {
       set_agent_state('initializing');
-      set_messages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: 'system', text: 'Conectado. Esperando al agente...' },
-      ]);
+      push_system_message('Conectado. Esperando al agente...');
     };
 
     const on_participant_connected = () => {
       // El SDK marca los agentes con isAgent en algunas integraciones,
       // pero como este cliente es "raw Room", usamos un mensaje generico.
       set_agent_state('listening');
-      set_messages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: 'system', text: 'Agente en sala.' },
-      ]);
+      push_system_message('Agente en sala.');
     };
 
 
@@ -511,14 +551,7 @@ export default function Page() {
 
     const on_media_devices_error = (e: Error) => {
       const msg = `${e.name}: ${e.message}`;
-      set_messages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'system',
-          text: `Error de dispositivos de audio/video: ${msg}`,
-        },
-      ]);
+      push_system_message(`Error de dispositivos de audio/video: ${msg}`);
     };
 
     const on_data = (payload: Uint8Array) => {
@@ -553,6 +586,9 @@ export default function Page() {
     room.on(RoomEvent.DataReceived, on_data);
 
     return () => {
+      if (notice_timeout_ref.current) {
+        window.clearTimeout(notice_timeout_ref.current);
+      }
       room.off(RoomEvent.Connected, on_connected);
       room.off(RoomEvent.Disconnected, on_disconnected);
       room.off(RoomEvent.ParticipantConnected, on_participant_connected);
@@ -565,7 +601,7 @@ export default function Page() {
       room.off(RoomEvent.MediaDevicesError, on_media_devices_error as any);
       room.off(RoomEvent.DataReceived, on_data);
     };
-  }, [room]);
+  }, [room, push_system_message, show_notice]);
 
   React.useEffect(() => {
     if (!popup_open) return;
@@ -579,14 +615,9 @@ export default function Page() {
         const secure_for_media = is_secure_origin_for_media();
 
         if (!secure_for_media) {
-          set_messages((prev) => [
-            ...prev,
-            {
-              id: crypto.randomUUID(),
-              role: 'system',
-              text: 'Aviso: tu origen no es seguro (HTTPS). El microfono puede fallar. Usa localhost o HTTPS.',
-            },
-          ]);
+          push_system_message(
+            'Aviso: tu origen no es seguro (HTTPS). El microfono puede fallar. Usa localhost o HTTPS.'
+          );
         }
 
         const res = await fetch('/api/token', {
@@ -603,18 +634,12 @@ export default function Page() {
               .setMicrophoneEnabled(true, undefined, { preConnectBuffer: true })
               .catch((e: unknown) => {
                 const msg = e instanceof Error ? `${e.name}: ${e.message}` : 'Permiso de microfono denegado';
-                set_messages((prev) => [
-                  ...prev,
-                  {
-                    id: crypto.randomUUID(),
-                    role: 'system',
-                    text: `Microfono no disponible: ${msg}`,
-                  },
-                ]);
+                push_system_message(`Microfono no disponible: ${msg}`);
               })
           : Promise.resolve();
 
         await Promise.all([room.connect(details.serverUrl, details.participantToken), maybe_enable_mic]);
+        set_agent_state('listening');
       } catch (e) {
         const msg = e instanceof Error ? `${e.name}: ${e.message}` : 'Error conectando al agente';
         set_error(msg);
@@ -623,7 +648,7 @@ export default function Page() {
     };
 
     void connect();
-  }, [popup_open, room]);
+  }, [popup_open, room, push_system_message]);
 
   React.useEffect(() => {
     if (!popup_open) return;
@@ -652,16 +677,24 @@ export default function Page() {
     set_pending_toggle(true);
     try {
       if (cam_enabled) {
-        const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
-        if (publication?.track) {
-          await room.localParticipant.unpublishTrack(publication.track, true);
-        }
         await room.localParticipant.setCameraEnabled(false);
         set_cam_enabled(false);
       } else {
+        if (screen_enabled) {
+          await room.localParticipant.setScreenShareEnabled(false);
+          set_screen_enabled(false);
+          const msg = 'Se desactivo pantalla para activar camara.';
+          push_system_message(msg);
+          show_notice(msg);
+        }
+
         const publication = await room.localParticipant.setCameraEnabled(true);
         set_cam_enabled(Boolean(publication));
       }
+    } catch (e) {
+      const msg = e instanceof Error ? `Camara: ${e.message}` : 'No se pudo cambiar camara.';
+      push_system_message(msg);
+      show_notice(msg);
     } finally {
       set_pending_toggle(false);
     }
@@ -671,26 +704,29 @@ export default function Page() {
     set_pending_toggle(true);
     try {
       if (screen_enabled) {
-        const publication = room.localParticipant.getTrackPublication(Track.Source.ScreenShare);
-        if (publication?.track) {
-          await room.localParticipant.unpublishTrack(publication.track, true);
-        }
         await room.localParticipant.setScreenShareEnabled(false);
         set_screen_enabled(false);
       } else {
+        if (cam_enabled) {
+          await room.localParticipant.setCameraEnabled(false);
+          set_cam_enabled(false);
+          const msg = 'Se desactivo camara para compartir pantalla.';
+          push_system_message(msg);
+          show_notice(msg);
+        }
+
         const publication = await room.localParticipant.setScreenShareEnabled(true);
         if (!publication) {
-          set_messages((prev) => [
-            ...prev,
-            {
-              id: crypto.randomUUID(),
-              role: 'system',
-              text: 'No se pudo iniciar la pantalla compartida. Revisa permisos o el navegador.',
-            },
-          ]);
+          const msg = 'No se pudo iniciar la pantalla compartida. Revisa permisos o el navegador.';
+          push_system_message(msg);
+          show_notice(msg);
         }
         set_screen_enabled(Boolean(publication));
       }
+    } catch (e) {
+      const msg = e instanceof Error ? `Pantalla: ${e.message}` : 'No se pudo cambiar pantalla.';
+      push_system_message(msg);
+      show_notice(msg);
     } finally {
       set_pending_toggle(false);
     }
@@ -718,6 +754,59 @@ export default function Page() {
       <RoomAudioRenderer />
       <StartAudio label="Iniciar audio" />
 
+      <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(120%_120%_at_10%_0%,rgba(11,95,255,0.14)_0%,transparent_55%),radial-gradient(100%_120%_at_100%_0%,rgba(11,95,255,0.09)_0%,transparent_60%),linear-gradient(180deg,#fbfbfa_0%,#f4f5f7_100%)] px-5 py-10 md:px-12 md:py-14">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute left-[-80px] top-[120px] h-56 w-56 rounded-full bg-fgAccent/10 blur-3xl" />
+          <div className="absolute right-[-60px] top-[40px] h-44 w-44 rounded-full bg-fgAccent/10 blur-3xl" />
+        </div>
+
+        <section className="relative mx-auto w-full max-w-5xl">
+          <div className="mb-8 max-w-2xl">
+            <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-separator1 bg-bg1 px-3 py-1 text-xs text-fg2">
+              <span className="h-2 w-2 rounded-full bg-fgAccent" />
+              OpenNemesis Assistant
+            </p>
+            <h1 className="text-3xl font-semibold leading-tight text-fg0 md:text-5xl">
+              Asistente multimodal en tiempo real para tu web
+            </h1>
+            <p className="mt-4 text-sm leading-6 text-fg2 md:text-base">
+              Habla, escribe o comparte pantalla. OpenNemesis recuerda tu contexto reciente y
+              responde al instante con una experiencia tipo burbuja.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-fg2 md:text-sm">
+              <span className="rounded-full border border-separator1 bg-bg1 px-3 py-1">Voz natural</span>
+              <span className="rounded-full border border-separator1 bg-bg1 px-3 py-1">Texto y pantalla</span>
+              <span className="rounded-full border border-separator1 bg-bg1 px-3 py-1">Memoria 48h</span>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-separator1/80 bg-bg1/90 p-5 shadow-sm backdrop-blur-sm md:p-6">
+            <h2 className="text-base font-semibold text-fg1 md:text-lg">Como funciona</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-separator1 bg-bg2/60 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-fg3">Paso 1</p>
+                <p className="mt-1 text-sm font-medium text-fg1">Abre la burbuja</p>
+                <p className="mt-1 text-xs text-fg3">Pulsa el boton flotante de la esquina inferior derecha.</p>
+              </div>
+              <div className="rounded-2xl border border-separator1 bg-bg2/60 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-fg3">Paso 2</p>
+                <p className="mt-1 text-sm font-medium text-fg1">Habla o escribe</p>
+                <p className="mt-1 text-xs text-fg3">Usa microfono o chat para pedir ayuda en tiempo real.</p>
+              </div>
+              <div className="rounded-2xl border border-separator1 bg-bg2/60 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-fg3">Paso 3</p>
+                <p className="mt-1 text-sm font-medium text-fg1">Comparte contexto visual</p>
+                <p className="mt-1 text-xs text-fg3">Activa camara o pantalla cuando necesites asistencia guiada.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex justify-end pr-16 text-xs text-fg3 md:pr-20">
+            Empieza aqui -&gt; burbuja flotante
+          </div>
+        </section>
+      </main>
+
       <Trigger
         error={error}
         popup_open={popup_open}
@@ -734,7 +823,33 @@ export default function Page() {
         onAnimationComplete={handle_panel_animation_complete}
         className="fixed right-4 bottom-20 left-4 z-50 md:left-auto"
       >
-        <div className="bg-bg1 border-separator1 ml-auto h-[500px] w-full rounded-[28px] border drop-shadow-md md:w-[380px] overflow-hidden">
+        {chat_open && !error && (
+          <div className="absolute -top-[74px] left-1/2 z-20 flex h-[72px] -translate-x-1/2 items-end gap-2.5 rounded-2xl border border-separator1 bg-bg1/95 px-3 pb-2 shadow-md backdrop-blur-sm md:-top-[82px] md:h-[78px]">
+            <div className="flex h-[54px] w-[64px] items-end justify-center md:h-[62px] md:w-[72px]">
+              <InlineVoiceBar agentState={agent_state} />
+            </div>
+            <AnimatePresence>
+              {active_local_visual_track && (
+                <motion.div
+                  key={`floating-${active_local_visual_track.title}`}
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.7, opacity: 0 }}
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
+                  className="overflow-hidden rounded-xl border border-separator1 shadow-sm"
+                  title={active_local_visual_track.title}
+                >
+                  <VideoTrack
+                    trackRef={active_local_visual_track.trackRef}
+                    className="h-[54px] w-[54px] object-cover md:h-[62px] md:w-[62px]"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        <div className="bg-bg1 border-separator1 ml-auto h-[82vh] max-h-[540px] w-full rounded-[28px] border drop-shadow-md md:h-[540px] md:w-[380px] overflow-hidden">
           <div className="relative h-full w-full">
             {error && (
               <div className="absolute inset-0 grid place-items-center p-6">
@@ -813,60 +928,45 @@ export default function Page() {
                   </div>
                 </div>
 
+                {ui_notice && (
+                  <div className="mx-3 mb-1 rounded-xl border border-separator1 bg-bg2/90 px-3 py-2 text-xs text-fg2">
+                    {ui_notice}
+                  </div>
+                )}
+
                 {!chat_open && (
                   <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
                     <VoiceBar agentState={agent_state} variant="large" className="translate-y-2" />
                   </div>
                 )}
 
-                <div
-                  className={cn(
-                    'relative mx-2 mt-1 mb-2 h-[124px] overflow-hidden rounded-[14px] border border-separator1/70',
-                    'bg-[radial-gradient(120%_120%_at_20%_0%,var(--color-bgAccentPrimary)_0%,transparent_50%),radial-gradient(90%_120%_at_100%_20%,rgba(11,95,255,0.18)_0%,transparent_60%),linear-gradient(180deg,var(--color-bg2)_0%,var(--color-bg1)_100%)]'
-                  )}
-                >
-                  {chat_open && <VoiceBar agentState={agent_state} variant="small" />}
-
-                  <AnimatePresence>
-                    {local_camera_track && (
-                      <motion.div
-                        key="local-camera"
-                        initial={{ scale: 0.6, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.6, opacity: 0 }}
-                        transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-                        className="absolute right-3 bottom-3 border border-separator1 rounded-[12px] overflow-hidden shadow-lg"
-                        title="Camara"
-                      >
-                        <VideoTrack
-                          trackRef={local_camera_track}
-                          className="h-[88px] w-[88px] object-cover"
-                        />
-                      </motion.div>
+                {!chat_open && (
+                  <div
+                    className={cn(
+                      'relative mx-2 mt-1 mb-2 h-[124px] overflow-hidden rounded-[14px] border border-separator1/70',
+                      'bg-[radial-gradient(120%_120%_at_20%_0%,var(--color-bgAccentPrimary)_0%,transparent_50%),radial-gradient(90%_120%_at_100%_20%,rgba(11,95,255,0.18)_0%,transparent_60%),linear-gradient(180deg,var(--color-bg2)_0%,var(--color-bg1)_100%)]'
                     )}
-                  </AnimatePresence>
-                  <AnimatePresence>
-                    {local_screen_track && (
-                      <motion.div
-                        key="local-screen"
-                        initial={{ scale: 0.6, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.6, opacity: 0 }}
-                        transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-                        className={cn(
-                          'absolute bottom-3 border border-separator1 rounded-[12px] overflow-hidden shadow-lg',
-                          local_camera_track ? 'right-[98px]' : 'right-3'
-                        )}
-                        title="Compartir pantalla"
-                      >
-                        <VideoTrack
-                          trackRef={local_screen_track}
-                          className="h-[88px] w-[88px] object-cover"
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                  >
+                    <AnimatePresence>
+                      {active_local_visual_track && (
+                        <motion.div
+                          key={active_local_visual_track.title}
+                          initial={{ scale: 0.6, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.6, opacity: 0 }}
+                          transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                          className="absolute right-3 bottom-3 border border-separator1 rounded-[12px] overflow-hidden shadow-lg"
+                          title={active_local_visual_track.title}
+                        >
+                          <VideoTrack
+                            trackRef={active_local_visual_track.trackRef}
+                            className="h-[88px] w-[88px] object-cover"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
                 <div className="relative flex h-full min-h-0 flex-1 flex-col">
                   <div className="flex min-h-0 flex-1 flex-col">
