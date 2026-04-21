@@ -54,9 +54,10 @@ El agente dispone de 4 tools:
 ## chat-web (Estado)
 
 - UI estilo embed con popup, botones y tooltips
+- Landing base (hero + guia rapida) para evitar pagina vacia
 - Texto via DataChannel (cliente -> agente) y respuestas del agente al chat
-- Preview local de camara y screen share
-- Preferencia de screen share en el agente (se desuscribe camara mientras se comparte pantalla)
+- Fuente visual unica en UI (camara o pantalla), con miniatura activa
+- Barra compacta de voz+miniatura encima del chat cuando el texto esta abierto
 - Worker con timeouts ampliados para evitar AssignmentTimeout
 - Contexto temporal: menciones de "hoy/ayer" en ventana 48h
 

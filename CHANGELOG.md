@@ -1,6 +1,9 @@
 # Changelog
 
 ## [2026-04-21]
+- fix(agent): mejorar vision en texto (79cb418)
+- feat(chat): pulir layout y estado (dbb82be)
+- docs: actualizar changelog (590dd3a)
 - chore(repo): eliminar frontend obsoleto (38bd841)
 - docs: actualizar changelog (6ce7c76)
 - feat(agent): contexto temporal 48h (f67c9d8)
