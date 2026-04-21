@@ -1,6 +1,9 @@
 # Changelog
 
+## [2026-04-21]
+- feat(agent): contexto temporal 48h (f67c9d8)
 ## [2026-04-08]
+- docs: actualizar changelog (d6836f5)
 - feat(chat): ajustar visualizador (d4d7011)
 - fix(agent): usar transcript en voz (0aedac2)
 - docs: actualizar changelog (1f87c0a)
