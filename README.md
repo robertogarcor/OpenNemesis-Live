@@ -17,7 +17,6 @@ Asistente personal de voz multimodal basado en LiveKit.
 livekit_agent/     # Agente de voz
 tools/             # Herramientas disponibles
 bin/               # Binarios (GOG CLI)
-frontend/          # Cliente web
 chat-web/          # Widget embebido (popup)
 ```
 

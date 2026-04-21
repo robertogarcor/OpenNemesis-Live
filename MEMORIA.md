@@ -12,7 +12,6 @@ Asistente de voz multimodal basado en LiveKit.
 - **skills/loader.py**: Sistema de skills GOG
 - **main.py**: Entry point
 - **livekit_agent/status.py**: Verificación de servicios
-- **frontend/**: Cliente web Next.js basado en agent-starter-react
 - **chat-web/**: Widget embebido tipo popup (Next.js) inspirado en agent-starter-embed
 
 ### Stack Tecnológico
@@ -50,7 +49,6 @@ El agente dispone de 4 tools:
 | Gemini | ✅ Configurado |
 | Tools (4) | ✅ Disponibles |
 | GOG | ✅ Autenticado |
-| Frontend React | ✅ Configurado |
 | chat-web | ✅ Conectado (popup embebido) |
 
 ## chat-web (Estado)
