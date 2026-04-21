@@ -37,7 +37,7 @@ load_dotenv()
 logger = logging.getLogger("OpenNemesis-Live.Agent")
 
 MAX_HISTORY_CONTEXT = 20
-TEMPORAL_WINDOW_HOURS = 36
+TEMPORAL_WINDOW_HOURS = 48
 LOCAL_TZ = ZoneInfo("Europe/Madrid")
 
 

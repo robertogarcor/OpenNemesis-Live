@@ -60,7 +60,7 @@ El agente dispone de 4 tools:
 - Preview local de camara y screen share
 - Preferencia de screen share en el agente (se desuscribe camara mientras se comparte pantalla)
 - Worker con timeouts ampliados para evitar AssignmentTimeout
-- Contexto temporal: menciones de "hoy/ayer" en ventana 36h
+- Contexto temporal: menciones de "hoy/ayer" en ventana 48h
 
 ## Documentación
 - SPEC.md: Especificaciones del proyecto
