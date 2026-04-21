@@ -1,6 +1,8 @@
 # Changelog
 
 ## [2026-04-21]
+- chore(repo): eliminar frontend obsoleto (38bd841)
+- docs: actualizar changelog (6ce7c76)
 - feat(agent): contexto temporal 48h (f67c9d8)
 ## [2026-04-08]
 - docs: actualizar changelog (d6836f5)
