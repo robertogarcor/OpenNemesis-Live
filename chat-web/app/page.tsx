@@ -824,8 +824,8 @@ export default function Page() {
         className="fixed right-4 bottom-20 left-4 z-50 md:left-auto"
       >
         {chat_open && !error && (
-          <div className="absolute -top-[74px] left-1/2 z-20 flex h-[72px] -translate-x-1/2 items-end gap-2.5 rounded-2xl border border-separator1 bg-bg1/95 px-3 pb-2 shadow-md backdrop-blur-sm md:-top-[82px] md:h-[78px]">
-            <div className="flex h-[54px] w-[64px] items-end justify-center md:h-[62px] md:w-[72px]">
+          <div className="absolute -top-[74px] left-1/2 z-20 flex h-[72px] -translate-x-1/2 items-center gap-2.5 rounded-2xl border border-separator1 bg-bg1/95 px-3 shadow-md backdrop-blur-sm md:-top-[82px] md:h-[78px]">
+            <div className="flex h-[54px] w-[64px] items-end justify-center pb-[3px] md:h-[62px] md:w-[72px] md:pb-[4px]">
               <InlineVoiceBar agentState={agent_state} />
             </div>
             <AnimatePresence>
@@ -955,7 +955,7 @@ export default function Page() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0.6, opacity: 0 }}
                           transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-                          className="absolute right-3 bottom-3 border border-separator1 rounded-[12px] overflow-hidden shadow-lg"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 border border-separator1 rounded-[12px] overflow-hidden shadow-lg"
                           title={active_local_visual_track.title}
                         >
                           <VideoTrack
