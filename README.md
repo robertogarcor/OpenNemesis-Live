@@ -26,6 +26,13 @@ chat-web/          # Widget embebido (popup)
 - `get_weather` - Clima actual
 - `search_web` - Búsqueda en tiempo real
 - `get_time` - Fechas y zonas horarias
+- `obsidian_search` - Buscar notas en vault local
+- `obsidian_get_vault` - Ver bóveda activa
+- `obsidian_set_vault` - Cambiar bóveda activa (sesión)
+- `obsidian_tasks` - Listar tareas Markdown
+- `obsidian_add` - Crear tarea en nota
+- `obsidian_complete` - Completar tarea en nota
+- `obsidian_create_vault` - Crear una nueva bóveda
 
 ## Setup
 
@@ -56,6 +63,15 @@ Para activar o renovar el token:
 
 ```bash
 ./bin/gogcli/gog auth add you@gmail.com --services gmail,calendar
+```
+
+### Obsidian (vault local)
+
+Configura el path del vault para habilitar tools de notas/tareas:
+
+```bash
+export OBSIDIAN_VAULT_PATH="$HOME/Documents/Obsidian"
+export OBSIDIAN_ALLOWED_BASE_DIRS="$HOME/obsidean:$HOME/Documents"
 ```
 
 ## chat-web (widget embebido)

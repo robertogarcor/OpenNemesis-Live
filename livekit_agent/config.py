@@ -30,6 +30,10 @@ LIVEKIT_AGENT_NAME = os.getenv("LIVEKIT_AGENT_NAME", "")
 GOG_ACCOUNT = os.getenv("GOG_ACCOUNT", "")
 GOGCLI_PATH = os.getenv("GOGCLI_PATH", "bin/gogcli/gog")
 
+# Obsidian Configuration (Optional)
+OBSIDIAN_VAULT_PATH = os.getenv("OBSIDIAN_VAULT_PATH", "")
+OBSIDIAN_ALLOWED_BASE_DIRS = os.getenv("OBSIDIAN_ALLOWED_BASE_DIRS", "")
+
 
 def validate_config() -> bool:
     """Valida que la configuración mínima esté presente."""

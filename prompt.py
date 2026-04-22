@@ -64,6 +64,27 @@ Busca información en internet.
 execute_command(command)
 Ejecuta un comando CLI en el sistema.
 
+obsidian_search(query, limit)
+Busca notas en Obsidian por texto.
+
+obsidian_get_vault()
+Muestra la bóveda activa de Obsidian.
+
+obsidian_set_vault(vault_path)
+Cambia la bóveda activa de Obsidian para la sesión actual.
+
+obsidian_tasks(note_path, status, limit)
+Lista tareas de Obsidian (abiertas/completadas/todas).
+
+obsidian_add(note_path, task)
+Añade una nueva tarea en una nota de Obsidian.
+
+obsidian_complete(note_path, task_contains)
+Marca como completada una tarea en Obsidian.
+
+obsidian_create_vault(vault_name, base_dir)
+Crea una nueva bóveda de Obsidian con estructura inicial.
+
 Usa herramientas cuando la tarea requiera:
 - información actual
 - ejecutar acciones

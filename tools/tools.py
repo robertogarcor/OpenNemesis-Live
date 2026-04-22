@@ -7,6 +7,8 @@ import requests
 from ddgs import DDGS
 from livekit.agents import function_tool, RunContext
 
+from tools.obsidian_tools import OBSIDIAN_TOOLS
+
 
 logger = logging.getLogger("OpenNemesis-Live.Tools")
 
@@ -80,7 +82,6 @@ def execute_command(command: str) -> str:
     except Exception as e:
         return f"Error: {str(e)}"
 
-
 # === Function Tools (para LiveKit) ===
 
 @function_tool
@@ -107,4 +108,10 @@ async def command(ctx: RunContext, command: str) -> str:
     return execute_command(command)
 
 
-AVAILABLE_TOOLS = [weather, time, search, command]
+AVAILABLE_TOOLS = [
+    weather,
+    time,
+    search,
+    command,
+    *OBSIDIAN_TOOLS,
+]

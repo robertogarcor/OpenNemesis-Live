@@ -33,6 +33,13 @@ Asistente personal de voz multimodal basado en LiveKit. El usuario se conecta de
 - `get_weather(city: str)`: Consulta de clima actual.
 - `search_web(query: str)`: Búsqueda de información en tiempo real.
 - `get_time()`: Gestión de fechas y zonas horarias.
+- `obsidian_search(query, limit)`: Búsqueda de notas en el vault local de Obsidian.
+- `obsidian_get_vault()`: Consulta de la bóveda activa de Obsidian.
+- `obsidian_set_vault(vault_path)`: Cambio de bóveda activa en runtime.
+- `obsidian_tasks(note_path, status, limit)`: Listado de tareas Markdown en Obsidian.
+- `obsidian_add(note_path, task)`: Alta de tareas en notas de Obsidian.
+- `obsidian_complete(note_path, task_contains)`: Cierre de tareas en Obsidian.
+- `obsidian_create_vault(vault_name, base_dir)`: Creación de nuevas bóvedas de Obsidian.
 
 ### 4.2 Gestión de Sesiones
 - **Autenticación:** El cliente web obtiene token de LiveKit Cloud directamente.

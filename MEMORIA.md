@@ -8,8 +8,9 @@ Asistente de voz multimodal basado en LiveKit.
 ### Componentes
 - **livekit_agent/agent.py**: Agente de voz con Gemini Realtime
 - **data/db.py**: Persistencia SQLite para historial
-- **tools/tools.py**: Herramientas del agente
-- **skills/loader.py**: Sistema de skills GOG
+- **tools/tools.py**: Herramientas primarias del agente
+- **tools/obsidian_tools.py**: Herramientas de Obsidian (notas y tareas)
+- **skills/loader.py**: Sistema de skills
 - **main.py**: Entry point
 - **livekit_agent/status.py**: Verificación de servicios
 - **chat-web/**: Widget embebido tipo popup (Next.js) inspirado en agent-starter-embed
@@ -25,7 +26,7 @@ Asistente de voz multimodal basado en LiveKit.
 
 ## Herramientas Disponibles
 
-El agente dispone de 4 tools:
+El agente dispone de 11 tools:
 
 | Tool | Descripción |
 |------|-------------|
@@ -33,6 +34,13 @@ El agente dispone de 4 tools:
 | time | Obtiene la hora y fecha actual |
 | search | Búsqueda web con DuckDuckGo |
 | command | Ejecuta comandos GOG (Gmail, Calendar) |
+| obsidian_get_vault | Muestra bóveda activa de Obsidian |
+| obsidian_set_vault | Cambia bóveda activa en runtime |
+| obsidian_search | Busca notas por texto en Obsidian |
+| obsidian_tasks | Lista tareas en notas Markdown |
+| obsidian_add | Añade tareas en notas |
+| obsidian_complete | Marca tareas como completadas |
+| obsidian_create_vault | Crea una nueva bóveda de Obsidian |
 
 ## Integración GOG
 
@@ -47,7 +55,7 @@ El agente dispone de 4 tools:
 |----------|--------|
 | LiveKit Cloud | ✅ Conectado |
 | Gemini | ✅ Configurado |
-| Tools (4) | ✅ Disponibles |
+| Tools (11) | ✅ Disponibles |
 | GOG | ✅ Autenticado |
 | chat-web | ✅ Conectado (popup embebido) |
 
