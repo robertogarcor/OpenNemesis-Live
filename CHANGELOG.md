@@ -1,6 +1,11 @@
 # Changelog
 
+## [2026-04-22]
+- fix(security): bloquear comandos peligrosos (50934df)
+- feat(obsidian): añadir tools y vaults (1ccba9e)
+- fix(chat): alinear miniaturas superiores (fcf7537)
 ## [2026-04-21]
+- docs: actualizar memoria y changelog (b7e603a)
 - fix(agent): mejorar vision en texto (79cb418)
 - feat(chat): pulir layout y estado (dbb82be)
 - docs: actualizar changelog (590dd3a)
