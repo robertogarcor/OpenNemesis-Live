@@ -74,6 +74,11 @@ export OBSIDIAN_VAULT_PATH="$HOME/Documents/Obsidian"
 export OBSIDIAN_ALLOWED_BASE_DIRS="$HOME/obsidean:$HOME/Documents"
 ```
 
+### Seguridad (Obsidian)
+
+- El agente no debe borrar bóvedas ni notas de Obsidian.
+- Las operaciones destructivas por `execute_command` están bloqueadas por seguridad.
+
 ## chat-web (widget embebido)
 
 ```bash

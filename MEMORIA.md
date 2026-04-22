@@ -68,6 +68,7 @@ El agente dispone de 11 tools:
 - Barra compacta de voz+miniatura encima del chat cuando el texto esta abierto
 - Worker con timeouts ampliados para evitar AssignmentTimeout
 - Contexto temporal: menciones de "hoy/ayer" en ventana 48h
+- Obsidian con guardrails: sin borrado de bóvedas/notas desde el agente
 
 ## Documentación
 - SPEC.md: Especificaciones del proyecto

@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import subprocess
 from datetime import datetime
 
@@ -11,6 +12,28 @@ from tools.obsidian_tools import OBSIDIAN_TOOLS
 
 
 logger = logging.getLogger("OpenNemesis-Live.Tools")
+
+
+_DANGEROUS_COMMAND_PATTERNS = [
+    re.compile(r"(^|\s)rm(\s|$)"),
+    re.compile(r"(^|\s)rmdir(\s|$)"),
+    re.compile(r"(^|\s)mv(\s|$)"),
+    re.compile(r"(^|\s)sudo(\s|$)"),
+    re.compile(r"(^|\s)dd(\s|$)"),
+    re.compile(r"(^|\s)mkfs(\s|$)"),
+    re.compile(r"(^|\s)shutdown(\s|$)"),
+    re.compile(r"(^|\s)reboot(\s|$)"),
+    re.compile(r"(^|\s)poweroff(\s|$)"),
+    re.compile(r"git\s+reset\s+--hard"),
+    re.compile(r'git\s+clean\s+-[^\n]*f'),
+]
+
+
+def _is_dangerous_command(command: str) -> bool:
+    normalized = command.strip().lower()
+    if not normalized:
+        return True
+    return any(pattern.search(normalized) for pattern in _DANGEROUS_COMMAND_PATTERNS)
 
 
 # === Funciones Base ===
@@ -57,6 +80,12 @@ def search_web(query: str) -> str:
 def execute_command(command: str) -> str:
     """Execute a shell command."""
     try:
+        if _is_dangerous_command(command):
+            return (
+                "Error: comando bloqueado por seguridad. "
+                "No se permiten operaciones destructivas o de alto riesgo."
+            )
+
         env = os.environ.copy()
         env["GOG_ACCOUNT"] = os.getenv("GOG_ACCOUNT", "")
         gogcli_path = os.getenv("GOGCLI_PATH", "bin/gogcli")

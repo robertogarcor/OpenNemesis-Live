@@ -54,6 +54,8 @@ Asistente personal de voz multimodal basado en LiveKit. El usuario se conecta de
 - **Fallo de Micro:** Notificar al usuario en la interfaz del cliente web.
 - **Desconexión:** Reintento automático de conexión con backoff exponencial.
 - **Validación de token:** Verificar token antes de permitir conexión a sala.
+- **Seguridad de comandos:** Bloquear comandos destructivos o de alto riesgo en `execute_command`.
+- **Obsidian:** No permitir borrado de bóvedas o notas desde herramientas del agente.
 
 ## 7. Protocolo de Actualización
 
