@@ -26,7 +26,7 @@ Asistente de voz multimodal basado en LiveKit.
 
 ## Herramientas Disponibles
 
-El agente dispone de 11 tools:
+El agente dispone de 13 tools:
 
 | Tool | Descripción |
 |------|-------------|
@@ -37,10 +37,12 @@ El agente dispone de 11 tools:
 | obsidian_get_vault | Muestra bóveda activa de Obsidian |
 | obsidian_set_vault | Cambia bóveda activa en runtime |
 | obsidian_search | Busca notas por texto en Obsidian |
+| obsidian_tasks_vault | Lista tareas de toda la bóveda activa |
 | obsidian_tasks | Lista tareas en notas Markdown |
 | obsidian_add | Añade tareas en notas |
 | obsidian_complete | Marca tareas como completadas |
 | obsidian_create_vault | Crea una nueva bóveda de Obsidian |
+| obsidian_tasks_in_vault | Lista tareas de una bóveda específica |
 
 ## Integración GOG
 
@@ -55,7 +57,7 @@ El agente dispone de 11 tools:
 |----------|--------|
 | LiveKit Cloud | ✅ Conectado |
 | Gemini | ✅ Configurado |
-| Tools (11) | ✅ Disponibles |
+| Tools (13) | ✅ Disponibles |
 | GOG | ✅ Autenticado |
 | chat-web | ✅ Conectado (popup embebido) |
 
@@ -69,6 +71,7 @@ El agente dispone de 11 tools:
 - Worker con timeouts ampliados para evitar AssignmentTimeout
 - Contexto temporal: menciones de "hoy/ayer" en ventana 48h
 - Obsidian con guardrails: sin borrado de bóvedas/notas desde el agente
+- Activación selectiva de skills con `ENABLED_SKILLS`
 
 ## Documentación
 - SPEC.md: Especificaciones del proyecto

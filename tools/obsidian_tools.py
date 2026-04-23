@@ -49,6 +49,27 @@ def _get_allowed_base_dirs() -> List[Path]:
     return allowed
 
 
+def _resolve_vault_path(vault_ref: str) -> Path:
+    """Resuelve una referencia de bóveda por ruta absoluta o por nombre."""
+    cleaned = vault_ref.strip()
+    if not cleaned:
+        raise ValueError("Debes indicar una ruta o nombre de bóveda.")
+
+    # Ruta absoluta/relativa existente
+    direct = Path(cleaned).expanduser().resolve()
+    if direct.exists() and direct.is_dir():
+        return direct
+
+    # Si parece nombre de bóveda, probar en bases permitidas
+    if VAULT_NAME_PATTERN.match(cleaned):
+        for base in _get_allowed_base_dirs():
+            candidate = (base / cleaned).resolve()
+            if candidate.exists() and candidate.is_dir():
+                return candidate
+
+    raise FileNotFoundError(f"No encontré la bóveda: {cleaned}")
+
+
 def _validate_note_path(note_path: str) -> Path:
     vault_path = _get_obsidian_vault_path()
     if not vault_path.exists() or not vault_path.is_dir():
@@ -119,9 +140,10 @@ def set_active_vault(vault_path: str) -> str:
         if not cleaned:
             return "Error: debes indicar una ruta de bóveda."
 
-        candidate = Path(cleaned).expanduser().resolve()
-        if not candidate.exists() or not candidate.is_dir():
-            return f"Error: la bóveda no existe o no es un directorio: {candidate}"
+        try:
+            candidate = _resolve_vault_path(cleaned)
+        except Exception as e:
+            return f"Error: {e}"
 
         obsidian_dir = candidate / ".obsidian"
         if not obsidian_dir.exists() or not obsidian_dir.is_dir():
@@ -354,6 +376,15 @@ def create_vault(vault_name: str, base_dir: str = "") -> str:
         return f"Error: {e}"
 
 
+def list_tasks_in_vault(vault_path: str, status: str = "open", limit: int = 20) -> str:
+    """Cambia a una bóveda y lista sus tareas en una sola operación."""
+    change_result = set_active_vault(vault_path)
+    if change_result.startswith("Error:"):
+        return change_result
+    tasks_result = list_tasks(note_path="", status=status, limit=limit)
+    return f"{change_result}\n\n{tasks_result}"
+
+
 @function_tool
 async def obsidian_search(ctx: RunContext, query: str, limit: int = 5) -> str:
     """Busca notas en Obsidian por texto y devuelve coincidencias."""
@@ -362,8 +393,18 @@ async def obsidian_search(ctx: RunContext, query: str, limit: int = 5) -> str:
 
 @function_tool
 async def obsidian_tasks(ctx: RunContext, note_path: str = "", status: str = "open", limit: int = 20) -> str:
-    """Lista tareas de Obsidian (abiertas, completadas o todas)."""
+    """Lista tareas de Obsidian.
+
+    - Si note_path está vacío: lista tareas de toda la bóveda activa.
+    - Si note_path tiene valor: filtra por esa nota.
+    """
     return list_tasks(note_path=note_path, status=status, limit=limit)
+
+
+@function_tool
+async def obsidian_tasks_vault(ctx: RunContext, status: str = "open", limit: int = 20) -> str:
+    """Lista tareas de toda la bóveda activa de Obsidian."""
+    return list_tasks(note_path="", status=status, limit=limit)
 
 
 @function_tool
@@ -396,12 +437,22 @@ async def obsidian_create_vault(ctx: RunContext, vault_name: str, base_dir: str 
     return create_vault(vault_name=vault_name, base_dir=base_dir)
 
 
+@function_tool
+async def obsidian_tasks_in_vault(
+    ctx: RunContext, vault_path: str, status: str = "open", limit: int = 20
+) -> str:
+    """Lista tareas de una bóveda específica (por ruta o nombre)."""
+    return list_tasks_in_vault(vault_path=vault_path, status=status, limit=limit)
+
+
 OBSIDIAN_TOOLS = [
     obsidian_get_vault,
     obsidian_set_vault,
     obsidian_search,
+    obsidian_tasks_vault,
     obsidian_tasks,
     obsidian_add,
     obsidian_complete,
     obsidian_create_vault,
+    obsidian_tasks_in_vault,
 ]

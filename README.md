@@ -29,10 +29,12 @@ chat-web/          # Widget embebido (popup)
 - `obsidian_search` - Buscar notas en vault local
 - `obsidian_get_vault` - Ver bóveda activa
 - `obsidian_set_vault` - Cambiar bóveda activa (sesión)
+- `obsidian_tasks_vault` - Listar tareas de toda la bóveda
 - `obsidian_tasks` - Listar tareas Markdown
 - `obsidian_add` - Crear tarea en nota
 - `obsidian_complete` - Completar tarea en nota
 - `obsidian_create_vault` - Crear una nueva bóveda
+- `obsidian_tasks_in_vault` - Listar tareas de una bóveda específica
 
 ## Setup
 
@@ -73,6 +75,20 @@ Configura el path del vault para habilitar tools de notas/tareas:
 export OBSIDIAN_VAULT_PATH="$HOME/Documents/Obsidian"
 export OBSIDIAN_ALLOWED_BASE_DIRS="$HOME/obsidean:$HOME/Documents"
 ```
+
+### Activar/Desactivar skills
+
+Usa `ENABLED_SKILLS` para controlar qué skills y tools opcionales están activas.
+
+```bash
+# Todas activas (por defecto): dejar vacío
+export ENABLED_SKILLS=""
+
+# Solo GOG + Obsidian
+export ENABLED_SKILLS="gog,obsidian-tasks"
+```
+
+`core` (weather/time/search) permanece siempre activo.
 
 ### Seguridad (Obsidian)
 

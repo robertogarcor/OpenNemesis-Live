@@ -4,6 +4,7 @@ Definición de prompts del sistema para Gemini
 """
 
 from skills.loader import get_skills_context
+from tools.tools import get_active_tool_descriptions
 
 
 SYSTEM_PROMPT = """
@@ -73,8 +74,12 @@ Muestra la bóveda activa de Obsidian.
 obsidian_set_vault(vault_path)
 Cambia la bóveda activa de Obsidian para la sesión actual.
 
+obsidian_tasks_vault(status, limit)
+Lista tareas de toda la bóveda activa de Obsidian.
+
 obsidian_tasks(note_path, status, limit)
 Lista tareas de Obsidian (abiertas/completadas/todas).
+Si note_path está vacío, consulta toda la bóveda.
 
 obsidian_add(note_path, task)
 Añade una nueva tarea en una nota de Obsidian.
@@ -85,12 +90,23 @@ Marca como completada una tarea en Obsidian.
 obsidian_create_vault(vault_name, base_dir)
 Crea una nueva bóveda de Obsidian con estructura inicial.
 
+obsidian_tasks_in_vault(vault_path, status, limit)
+Lista tareas de una bóveda específica por nombre o ruta.
+
 Usa herramientas cuando la tarea requiera:
 - información actual
 - ejecutar acciones
 - consultar servicios externos
 
 Nunca inventes resultados de una herramienta.
+
+Si el usuario pide una capacidad de una skill que no está en las herramientas activas,
+responde claramente: "Esa capacidad está desactivada en este entorno".
+Luego indica brevemente qué herramientas sí están activas.
+
+REGLA OPERATIVA OBSIDIAN:
+- Si el usuario pide "tareas de la bóveda X", usa primero `obsidian_tasks_in_vault`.
+- Si pide tareas de una nota concreta, usa `obsidian_tasks(note_path=...)`.
 
 ------------------------------------------------
 REGLA IMPORTANTE SOBRE FECHAS
@@ -253,4 +269,10 @@ NO es follow-up (no buscar):
 def get_system_prompt() -> str:
     """Retorna el prompt completo del sistema con skills"""
     skills = get_skills_context()
-    return SYSTEM_PROMPT + "\n\n" + skills
+    active_tools = get_active_tool_descriptions()
+    tools_block = (
+        "\n\n=== HERRAMIENTAS ACTIVAS EN ESTE ENTORNO ===\n"
+        f"{active_tools}\n"
+        "=========================================\n"
+    )
+    return SYSTEM_PROMPT + tools_block + "\n" + skills

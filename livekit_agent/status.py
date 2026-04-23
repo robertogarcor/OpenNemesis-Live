@@ -14,7 +14,6 @@ def check_services():
         LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET,
         GEMINI_API_KEY
     )
-    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
     GOGCLI_PATH = os.getenv("GOGCLI_PATH", "bin/gogcli/gog")
     
     logger = logging.getLogger("OpenNemesis-Live")

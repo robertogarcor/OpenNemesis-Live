@@ -6,11 +6,33 @@ Carga la documentación de skills desde ./skills/*/SKILL.md
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 logger = logging.getLogger("OpenNemesis.SkillsLoader")
 
 SKILLS_DIR = Path("skills")
+
+
+def get_enabled_skills() -> Optional[Set[str]]:
+    """Retorna skills habilitadas desde ENABLED_SKILLS.
+
+    - None: no hay filtro (todas habilitadas)
+    - set(...): solo las skills incluidas
+    """
+    raw = os.getenv("ENABLED_SKILLS", "").strip()
+    if not raw:
+        return None
+
+    values = {item.strip().lower() for item in raw.split(",") if item.strip()}
+    return values or None
+
+
+def is_skill_enabled(skill_name: str, enabled: Optional[Set[str]] = None) -> bool:
+    if enabled is None:
+        enabled = get_enabled_skills()
+    if enabled is None:
+        return True
+    return skill_name.lower() in enabled
 
 
 def load_skill(skill_dir: Path) -> Optional[Dict[str, str]]:
@@ -57,6 +79,7 @@ def _extract_description(content: str) -> str:
 def load_all_skills() -> Dict[str, Dict[str, str]]:
     """Carga todas las skills disponibles"""
     skills = {}
+    enabled = get_enabled_skills()
     
     if not SKILLS_DIR.exists():
         logger.warning(f"⚠️ Directorio skills no encontrado: {SKILLS_DIR}")
@@ -64,6 +87,9 @@ def load_all_skills() -> Dict[str, Dict[str, str]]:
     
     for entry in SKILLS_DIR.iterdir():
         if entry.is_dir() and not entry.name.startswith(".") and not entry.name.startswith("_"):
+            if not is_skill_enabled(entry.name, enabled):
+                logger.info(f"- Skill deshabilitada por flag: {entry.name}")
+                continue
             skill = load_skill(entry)
             if skill:
                 skills[skill["name"]] = skill

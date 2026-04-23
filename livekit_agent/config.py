@@ -34,6 +34,9 @@ GOGCLI_PATH = os.getenv("GOGCLI_PATH", "bin/gogcli/gog")
 OBSIDIAN_VAULT_PATH = os.getenv("OBSIDIAN_VAULT_PATH", "")
 OBSIDIAN_ALLOWED_BASE_DIRS = os.getenv("OBSIDIAN_ALLOWED_BASE_DIRS", "")
 
+# Feature Flags (Optional)
+ENABLED_SKILLS = os.getenv("ENABLED_SKILLS", "")
+
 
 def validate_config() -> bool:
     """Valida que la configuración mínima esté presente."""

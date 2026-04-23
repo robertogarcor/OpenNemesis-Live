@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 from datetime import datetime
+from typing import Dict, List, Optional, Set
 
 import requests
 from ddgs import DDGS
@@ -12,6 +13,22 @@ from tools.obsidian_tools import OBSIDIAN_TOOLS
 
 
 logger = logging.getLogger("OpenNemesis-Live.Tools")
+
+
+def _parse_enabled_skills() -> Optional[Set[str]]:
+    raw = os.getenv("ENABLED_SKILLS", "").strip()
+    if not raw:
+        return None
+    parsed = {item.strip().lower() for item in raw.split(",") if item.strip()}
+    return parsed or None
+
+
+def _is_skill_enabled(skill_name: str, enabled: Optional[Set[str]] = None) -> bool:
+    if enabled is None:
+        enabled = _parse_enabled_skills()
+    if enabled is None:
+        return True
+    return skill_name.lower() in enabled
 
 
 _DANGEROUS_COMMAND_PATTERNS = [
@@ -137,10 +154,58 @@ async def command(ctx: RunContext, command: str) -> str:
     return execute_command(command)
 
 
-AVAILABLE_TOOLS = [
-    weather,
-    time,
-    search,
-    command,
-    *OBSIDIAN_TOOLS,
-]
+CORE_TOOLS = [weather, time, search]
+GOG_TOOLS = [command]
+
+TOOL_GROUPS: Dict[str, List] = {
+    "core": CORE_TOOLS,
+    "gog": GOG_TOOLS,
+    "obsidian-tasks": OBSIDIAN_TOOLS,
+}
+
+TOOL_DESCRIPTIONS: Dict[str, str] = {
+    "weather": "Consulta el clima de una ciudad.",
+    "time": "Obtiene fecha y hora actual.",
+    "search": "Busca información en web en tiempo real.",
+    "command": "Ejecuta comandos CLI (uso principal: GOG Gmail/Calendar).",
+    "obsidian_get_vault": "Muestra información de la bóveda Obsidian activa.",
+    "obsidian_set_vault": "Cambia la bóveda Obsidian activa en runtime.",
+    "obsidian_search": "Busca notas en Obsidian por nombre/contenido.",
+    "obsidian_tasks_vault": "Lista tareas de toda la bóveda activa de Obsidian.",
+    "obsidian_tasks": "Lista tareas Markdown en Obsidian.",
+    "obsidian_add": "Añade una tarea en una nota de Obsidian.",
+    "obsidian_complete": "Marca como completada una tarea en Obsidian.",
+    "obsidian_create_vault": "Crea una nueva bóveda de Obsidian.",
+    "obsidian_tasks_in_vault": "Lista tareas de una bóveda específica por nombre o ruta.",
+}
+
+
+def get_active_tools() -> List:
+    enabled = _parse_enabled_skills()
+
+    tools: List = []
+    tools.extend(CORE_TOOLS)
+
+    if _is_skill_enabled("gog", enabled):
+        tools.extend(GOG_TOOLS)
+
+    if _is_skill_enabled("obsidian-tasks", enabled):
+        tools.extend(OBSIDIAN_TOOLS)
+
+    return tools
+
+
+def get_active_tool_descriptions() -> str:
+    active = get_active_tools()
+    if not active:
+        return "No hay herramientas activas."
+
+    lines = []
+    for tool in active:
+        name = tool.__name__
+        desc = TOOL_DESCRIPTIONS.get(name, "Herramienta disponible.")
+        lines.append(f"- {name}: {desc}")
+    return "\n".join(lines)
+
+
+AVAILABLE_TOOLS = get_active_tools()

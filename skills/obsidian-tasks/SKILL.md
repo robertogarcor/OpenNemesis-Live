@@ -46,6 +46,12 @@ export OBSIDIAN_ALLOWED_BASE_DIRS="$HOME/obsidean:$HOME/Documents"
   - Lista tareas en una nota concreta o en todo el vault.
   - `status`: `open`, `done`, `all`.
 
+- `obsidian_tasks_vault(status="open", limit=20)`
+  - Lista tareas de toda la bóveda activa sin indicar `note_path`.
+
+- `obsidian_tasks_in_vault(vault_path, status="open", limit=20)`
+  - Cambia a una bóveda específica (por nombre o ruta) y lista tareas en una sola operación.
+
 - `obsidian_add(note_path, task)`
   - Añade una tarea `- [ ]` en la nota indicada.
   - Crea la nota si no existe.
@@ -62,6 +68,7 @@ export OBSIDIAN_ALLOWED_BASE_DIRS="$HOME/obsidean:$HOME/Documents"
 
 - `note_path` es relativo al vault (ejemplo: `daily/2026-04-22.md`).
 - Si no se indica extensión, se añade `.md` automáticamente.
+- Si quieres tareas de toda la bóveda, usa `obsidian_tasks_vault` o `obsidian_tasks` con `note_path=""`.
 
 ## Seguridad
 
