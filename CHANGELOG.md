@@ -1,5 +1,8 @@
 # Changelog
 
+## [2026-04-23]
+- feat(obsidian): mejorar tareas por bóveda y flags (b76ae20)
+
 ## [2026-04-22]
 - fix(security): bloquear comandos peligrosos (50934df)
 - feat(obsidian): añadir tools y vaults (1ccba9e)
