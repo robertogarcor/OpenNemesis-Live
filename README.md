@@ -18,6 +18,7 @@ livekit_agent/     # Agente de voz
 tools/             # Herramientas disponibles
 bin/               # Binarios (GOG CLI)
 chat-web/          # Widget embebido (popup)
+chat-web-full/     # Cliente web completo (full page)
 ```
 
 ## Herramientas
@@ -104,6 +105,16 @@ npm run dev
 ```
 
 Abre `http://localhost:3000` y conecta el widget.
+
+## chat-web-full (cliente web completo)
+
+```bash
+cd chat-web-full
+npm install
+npm run dev
+```
+
+Abre `http://localhost:3000` para usar el cliente full page (sin burbuja).
 
 ## Documentación
 

@@ -16,7 +16,7 @@ Asistente personal de voz multimodal basado en LiveKit. El usuario se conecta de
 ## 3. Arquitectura y Flujo de Datos
 
 ### 3.1 Componentes Principales
-- **Cliente Web (Frontend):** Interfaz web basada en agent-starter-embed de LiveKit. Funciona en navegador y móvil. Se conecta directamente a LiveKit Cloud.
+- **Cliente Web (Frontend):** Interfaz web con dos modos: widget embebido (`chat-web`) y cliente full page (`chat-web-full`). Ambos funcionan en navegador y móvil y se conectan directamente a LiveKit Cloud.
 - **LiveKit Agent (Backend de voz):** Proceso Python que se une a la sala cuando el usuario se conecta.
 - **Base de datos:** SQLite con historial de conversaciones.
 

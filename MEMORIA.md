@@ -14,6 +14,7 @@ Asistente de voz multimodal basado en LiveKit.
 - **main.py**: Entry point
 - **livekit_agent/status.py**: Verificación de servicios
 - **chat-web/**: Widget embebido tipo popup (Next.js) inspirado en agent-starter-embed
+- **chat-web-full/**: Cliente web completo (full page) en Next.js
 
 ### Stack Tecnológico
 - Python 3.10+ con venv
@@ -22,7 +23,7 @@ Asistente de voz multimodal basado en LiveKit.
 - SQLite (aiosqlite)
 - GOG CLI para Google Workspace
 - Next.js 15 + React (Frontend)
-- Tailwind CSS v4 (chat-web)
+- Tailwind CSS v4 (chat-web y chat-web-full)
 
 ## Herramientas Disponibles
 
@@ -60,6 +61,7 @@ El agente dispone de 13 tools:
 | Tools (13) | ✅ Disponibles |
 | GOG | ✅ Autenticado |
 | chat-web | ✅ Conectado (popup embebido) |
+| chat-web-full | ✅ Cliente full page disponible |
 
 ## chat-web (Estado)
 
@@ -73,6 +75,13 @@ El agente dispone de 13 tools:
 - Obsidian con guardrails: sin borrado de bóvedas/notas desde el agente
 - Activación selectiva de skills con `ENABLED_SKILLS`
 
+## chat-web-full (Estado)
+
+- Cliente completo en pantalla (sin burbuja embebida)
+- Reusa token API de LiveKit (`/api/token`) y flujo de DataChannel
+- Incluye controles de microfono, camara y pantalla
+- Layout responsive para desktop/movil con panel de chat siempre visible
+
 ## Documentación
 - SPEC.md: Especificaciones del proyecto
 - AGENTS.md: Guías para agentes AI
@@ -81,6 +90,6 @@ El agente dispone de 13 tools:
 
 ## Próximos Pasos
 
-1. Probar chat-web con texto/camara/pantalla
-2. Ajustes finales de UI
+1. Probar chat-web-full en desktop y movil
+2. Ajustes visuales finales entre cliente embebido y full page
 3. Desplegar en Vercel
