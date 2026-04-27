@@ -176,8 +176,8 @@ function Transcript({ messages }: { messages: UiMessage[] }) {
             className={cn(
               'max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-snug',
               m.role === 'user' && 'ml-auto bg-fgAccent text-bg1 rounded-br-md',
-              m.role === 'assistant' && 'mr-auto bg-bg2 text-fg1 rounded-bl-md',
-              m.role === 'system' && 'mx-auto max-w-full bg-bg1 text-fg3 text-[12px]'
+              m.role === 'assistant' && 'mr-auto border border-separator1/40 bg-bg2/70 text-fg1 rounded-bl-md',
+              m.role === 'system' && 'mx-auto max-w-full border border-separator1/50 bg-bg1/40 text-fg3 text-[12px]'
             )}
           >
             {m.text}
