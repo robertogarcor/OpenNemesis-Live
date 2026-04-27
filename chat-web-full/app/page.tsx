@@ -133,22 +133,43 @@ function InlineVoiceBar({ agentState }: { agentState: string }) {
 
 function Transcript({ messages }: { messages: UiMessage[] }) {
   const ref = React.useRef<HTMLDivElement>(null);
+  const is_near_bottom_ref = React.useRef(true);
+
+  const update_scroll_anchor = React.useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const distance_to_bottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    is_near_bottom_ref.current = distance_to_bottom < 64;
+  }, []);
 
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    const id = window.requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+      is_near_bottom_ref.current = true;
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, []);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || !is_near_bottom_ref.current) return;
+    const id = window.requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [messages]);
 
   return (
     <div
       ref={ref}
-      className={cn(
-        'scrollbar-on-hover flex grow flex-col overflow-x-hidden overflow-y-scroll py-3 pr-3 pl-1',
-        '[mask-image:linear-gradient(0deg,rgba(0,0,0,0.2)_0%,rgba(0,0,0,1)_5%,rgba(0,0,0,1)_95%,rgba(0,0,0,0)_100%)]'
-      )}
+      onScroll={update_scroll_anchor}
+      onWheel={(event) => event.stopPropagation()}
+      onTouchMove={(event) => event.stopPropagation()}
+      className="scrollbar-on-hover relative z-20 h-full min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain py-3 pr-3 pl-1 touch-pan-y"
     >
-      <div className="flex flex-1 flex-col justify-end gap-2 pt-12">
+      <div className="flex flex-col gap-2 pt-12 pb-2">
         {messages.map((m) => (
           <div
             key={m.id}
@@ -188,7 +209,7 @@ function ToggleButton({
       onClick={on_click}
       disabled={pending}
       className={cn(
-        'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg2 text-fg1 drop-shadow-sm',
+        'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg1 text-fg0 drop-shadow-sm',
         'transition-colors hover:bg-bg3',
         !pressed && 'text-destructive-foreground',
         pending && 'opacity-70'
@@ -227,12 +248,7 @@ function ActionBar({
   on_toggle_screen: () => Promise<void>;
 }) {
   return (
-    <div className="relative z-20 mx-2 mb-2 flex flex-col">
-      {about_open && (
-        <div className="absolute bottom-12 right-0 w-[220px] rounded-xl border border-separator1 bg-bg1 p-3 text-xs text-fg2 shadow-lg">
-          Este widget esta inspirado en el embed de LiveKit, con marca OpenNemesis.
-        </div>
-      )}
+    <div className="z-50 mx-2 mb-2 flex shrink-0 flex-col bg-bg1/95">
       <div className="flex flex-row justify-between gap-1">
         <div className="flex gap-1">
           <ToggleButton
@@ -243,7 +259,7 @@ function ActionBar({
           >
             {(() => {
               const Icon = mic_enabled ? MicrophoneIcon : MicrophoneSlashIcon;
-              return <Icon weight="bold" size={18} />;
+              return <Icon weight="bold" size={18} color={mic_enabled ? '#1f2937' : '#c62828'} />;
             })()}
           </ToggleButton>
 
@@ -255,7 +271,7 @@ function ActionBar({
           >
             {(() => {
               const Icon = cam_enabled ? VideoCameraIcon : VideoCameraSlashIcon;
-              return <Icon weight="bold" size={18} />;
+              return <Icon weight="bold" size={18} color={cam_enabled ? '#1f2937' : '#c62828'} />;
             })()}
           </ToggleButton>
 
@@ -265,19 +281,28 @@ function ActionBar({
             on_click={() => void on_toggle_screen()}
             label="Compartir pantalla"
           >
-            <MonitorArrowUpIcon weight="bold" size={18} />
+            <MonitorArrowUpIcon
+              weight="bold"
+              size={18}
+              color={screen_enabled ? '#1f2937' : '#c62828'}
+            />
           </ToggleButton>
         </div>
 
         {can_chat && (
-          <div className="flex gap-1">
+          <div className="relative flex gap-1">
+            {about_open && (
+              <div className="absolute bottom-12 right-0 w-[220px] rounded-xl border border-separator1 bg-bg1 p-3 text-xs text-fg2 shadow-lg">
+                Este widget esta inspirado en el embed de LiveKit, con marca OpenNemesis.
+              </div>
+            )}
             <button
               type="button"
               aria-label="Chat"
               title="Chat"
               onClick={() => on_chat_open_change(!chat_open)}
               className={cn(
-                'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg2 text-fg1 drop-shadow-sm',
+                'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg1 text-fg0 drop-shadow-sm',
                 'transition-colors hover:bg-bg3',
                 chat_open && 'bg-bgAccentPrimary text-fgAccent'
               )}
@@ -290,7 +315,7 @@ function ActionBar({
               title="About"
               onClick={on_about_toggle}
               className={cn(
-                'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg2 text-fg1 drop-shadow-sm',
+                'grid size-10 place-items-center rounded-xl border border-separator1 bg-bg1 text-fg0 drop-shadow-sm',
                 'transition-colors hover:bg-bg3',
                 about_open && 'bg-bgAccentPrimary text-fgAccent'
               )}
@@ -593,6 +618,8 @@ export default function Page() {
     }
   }
 
+  const is_disconnected = agent_state === 'disconnected';
+
   return (
     <RoomContext.Provider value={room}>
       <RoomAudioRenderer />
@@ -605,7 +632,7 @@ export default function Page() {
         </div>
 
         <section className="relative mx-auto w-full max-w-5xl">
-          <div className="bg-bg1 border-separator1 h-[88vh] min-h-[560px] w-full rounded-[28px] border drop-shadow-md overflow-hidden">
+          <div className="h-[88vh] min-h-[560px] w-full overflow-hidden">
             <div className="relative h-full w-full">
               {error && (
                 <div className="absolute inset-0 grid place-items-center p-6">
@@ -667,20 +694,36 @@ export default function Page() {
                     <div className="flex items-center gap-2">
                       <div
                         className="flex items-center gap-2 rounded-full border border-separator1 bg-bg2 px-3 py-1 text-[11px] text-fg2"
-                        title="Sesion activa"
+                        title={is_disconnected ? 'Sesion desconectada' : 'Sesion activa'}
                       >
                         <PhoneCallIcon size={14} weight="bold" className="text-fgAccent" />
-                        En llamada
+                        {is_disconnected ? 'Desconectado' : 'En llamada'}
                       </div>
-                      <button
-                        type="button"
-                        className="grid size-10 place-items-center rounded-xl border border-separator1 bg-bg2 text-destructive-foreground hover:bg-destructive-hover"
-                        onClick={() => room.disconnect()}
-                        aria-label="Salir"
-                        title="Salir"
-                      >
-                        <PhoneDisconnectIcon size={18} weight="bold" />
-                      </button>
+
+                      {is_disconnected ? (
+                        <button
+                          type="button"
+                          className="rounded-xl bg-fgAccent px-3 py-2 text-xs font-semibold text-bg1 hover:opacity-90"
+                          onClick={() => {
+                            set_error(null);
+                            void connect_room();
+                          }}
+                          aria-label="Reconectar"
+                          title="Reconectar"
+                        >
+                          Conectar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="grid size-10 place-items-center rounded-xl border border-separator1 bg-bg2 text-destructive-foreground hover:bg-destructive-hover"
+                          onClick={() => room.disconnect()}
+                          aria-label="Salir"
+                          title="Salir"
+                        >
+                          <PhoneDisconnectIcon size={18} weight="bold" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -690,43 +733,9 @@ export default function Page() {
                     </div>
                   )}
 
-                  {!chat_open && (
-                    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-                      <VoiceBar agentState={agent_state} variant="large" className="translate-y-2" />
-                    </div>
-                  )}
-
-                  {!chat_open && (
-                    <div
-                      className={cn(
-                        'relative mx-2 mt-1 mb-2 h-[176px] overflow-hidden rounded-[14px] border border-separator1/70',
-                        'bg-[radial-gradient(120%_120%_at_20%_0%,var(--color-bgAccentPrimary)_0%,transparent_50%),radial-gradient(90%_120%_at_100%_20%,rgba(11,95,255,0.18)_0%,transparent_60%),linear-gradient(180deg,var(--color-bg2)_0%,var(--color-bg1)_100%)]'
-                      )}
-                    >
-                      <AnimatePresence>
-                        {active_local_visual_track && (
-                          <motion.div
-                            key={active_local_visual_track.title}
-                            initial={{ scale: 0.6, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.6, opacity: 0 }}
-                            transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 border border-separator1 rounded-[12px] overflow-hidden shadow-lg"
-                            title={active_local_visual_track.title}
-                          >
-                            <VideoTrack
-                              trackRef={active_local_visual_track.trackRef}
-                              className="h-[112px] w-[112px] object-cover"
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
-
-                  <div className="flex h-full min-h-0 flex-1 flex-col">
-                    {chat_open && !error && (
-                      <div className="absolute -top-[74px] left-1/2 z-20 flex h-[72px] -translate-x-1/2 items-center gap-2.5 rounded-2xl border border-separator1 bg-bg1/95 px-3 shadow-md backdrop-blur-sm md:-top-[82px] md:h-[78px]">
+                  {chat_open && !error && (
+                    <div className="mx-2 mt-1 mb-1 flex shrink-0 justify-center">
+                      <div className="inline-flex h-[72px] w-fit items-center gap-2.5 rounded-2xl border border-separator1/40 px-3 md:h-[78px]">
                         <div className="flex h-[54px] w-[64px] items-end justify-center pb-[3px] md:h-[62px] md:w-[72px] md:pb-[4px]">
                           <InlineVoiceBar agentState={agent_state} />
                         </div>
@@ -738,7 +747,7 @@ export default function Page() {
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0.7, opacity: 0 }}
                               transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
-                              className="overflow-hidden rounded-xl border border-separator1 shadow-sm"
+                              className="overflow-hidden rounded-xl"
                               title={active_local_visual_track.title}
                             >
                               <VideoTrack
@@ -749,47 +758,82 @@ export default function Page() {
                           )}
                         </AnimatePresence>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    <div className="flex min-h-0 flex-1 flex-col">
+                  {!chat_open && (
+                    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                      <VoiceBar agentState={agent_state} variant="large" className="-translate-y-20" />
+                    </div>
+                  )}
+
+                  {!chat_open && active_local_visual_track && (
+                    <div className="pointer-events-none absolute right-3 bottom-[64px] z-20">
+                      <AnimatePresence>
+                        <motion.div
+                          key={`closed-${active_local_visual_track.title}`}
+                          initial={{ scale: 0.6, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.6, opacity: 0 }}
+                          transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                          className="overflow-hidden rounded-[12px]"
+                          title={active_local_visual_track.title}
+                        >
+                          <VideoTrack
+                            trackRef={active_local_visual_track.trackRef}
+                            className="h-[112px] w-[112px] object-cover"
+                          />
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto]">
+                    <div className="min-h-0 overflow-hidden">
                       {chat_open && <Transcript messages={messages} />}
                     </div>
 
                     {chat_open && (
-                      <div className="mx-2 mt-1 mb-2 flex gap-2">
-                        <input
-                          value={input_text}
-                          onChange={(e) => set_input_text(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void send_text();
-                          }}
-                          placeholder="Escribe aqui..."
-                          className="h-11 w-full rounded-[18px] border border-separator1 bg-bg2 px-3 text-sm text-fg1 placeholder:text-fg4 outline-none focus:ring-2 focus:ring-fgAccent/30"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => void send_text()}
-                          className="h-11 shrink-0 rounded-[18px] bg-fgAccent px-4 text-sm font-semibold text-bg1 hover:opacity-90"
-                        >
-                          Enviar
-                        </button>
+                      <div className="shrink-0 pb-1">
+                        <div className="mx-2 mt-1 mb-2 flex gap-2">
+                          <input
+                            value={input_text}
+                            onChange={(e) => set_input_text(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') void send_text();
+                            }}
+                            placeholder="Escribe aqui..."
+                            className="h-11 w-full rounded-[18px] border border-separator1/80 bg-transparent px-3 text-sm text-fg1 placeholder:text-fg4 outline-none focus:ring-2 focus:ring-fgAccent/30"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => void send_text()}
+                            className="h-11 shrink-0 rounded-[18px] bg-fgAccent px-4 text-sm font-semibold text-bg1 opacity-100 transition-[filter] hover:opacity-100 hover:brightness-95"
+                          >
+                            Enviar
+                          </button>
+                        </div>
                       </div>
                     )}
+                  </div>
 
-                    <ActionBar
-                      can_chat
-                      chat_open={chat_open}
-                      on_chat_open_change={set_chat_open}
-                      mic_enabled={mic_enabled}
-                      cam_enabled={cam_enabled}
-                      screen_enabled={screen_enabled}
-                      pending={pending_toggle}
-                      about_open={about_open}
-                      on_about_toggle={() => set_about_open((prev) => !prev)}
-                      on_toggle_mic={toggle_mic}
-                      on_toggle_cam={toggle_cam}
-                      on_toggle_screen={toggle_screen}
-                    />
+                  <div className="relative z-50 shrink-0 px-2 pb-1">
+                    <div className="rounded-2xl border border-separator1/80 bg-bg1/45 pt-1 backdrop-blur-sm">
+                      <ActionBar
+                        can_chat
+                        chat_open={chat_open}
+                        on_chat_open_change={set_chat_open}
+                        mic_enabled={mic_enabled}
+                        cam_enabled={cam_enabled}
+                        screen_enabled={screen_enabled}
+                        pending={pending_toggle}
+                        about_open={about_open}
+                        on_about_toggle={() => set_about_open((prev) => !prev)}
+                        on_toggle_mic={toggle_mic}
+                        on_toggle_cam={toggle_cam}
+                        on_toggle_screen={toggle_screen}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
