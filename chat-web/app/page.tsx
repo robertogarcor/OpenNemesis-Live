@@ -943,8 +943,7 @@ export default function Page() {
                 {!chat_open && (
                   <div
                     className={cn(
-                      'relative mx-2 mt-1 mb-2 h-[124px] overflow-hidden rounded-[14px] border border-separator1/70',
-                      'bg-[radial-gradient(120%_120%_at_20%_0%,var(--color-bgAccentPrimary)_0%,transparent_50%),radial-gradient(90%_120%_at_100%_20%,rgba(11,95,255,0.18)_0%,transparent_60%),linear-gradient(180deg,var(--color-bg2)_0%,var(--color-bg1)_100%)]'
+                      'relative mx-2 mt-1 mb-2 h-[124px] overflow-hidden rounded-[14px]'
                     )}
                   >
                     <AnimatePresence>
