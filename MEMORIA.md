@@ -8,6 +8,7 @@ Asistente de voz multimodal basado en LiveKit.
 ### Componentes
 - **livekit_agent/agent.py**: Agente de voz con Gemini Realtime
 - **data/db.py**: Persistencia SQLite para historial
+- **data/file_memory.py**: Memoria curada en Markdown (SOUL/RULES/USER/MEMORY)
 - **tools/tools.py**: Herramientas primarias del agente
 - **tools/obsidian_tools.py**: Herramientas de Obsidian (notas y tareas)
 - **skills/loader.py**: Sistema de skills
@@ -21,6 +22,7 @@ Asistente de voz multimodal basado en LiveKit.
 - LiveKit Agents SDK
 - Google Gemini (gemini-2.5-flash-native-audio-latest)
 - SQLite (aiosqlite)
+- Memoria híbrida: SQLite + archivos Markdown en `data/memory/`
 - GOG CLI para Google Workspace
 - Next.js 15 + React (Frontend)
 - Tailwind CSS v4 (chat-web y chat-web-full)
@@ -62,6 +64,7 @@ El agente dispone de 13 tools:
 | GOG | ✅ Autenticado |
 | chat-web | ✅ Conectado (popup embebido) |
 | chat-web-full | ✅ Cliente full page disponible |
+| File Memory (SOUL/RULES/USER/MEMORY) | ✅ Activo |
 
 ## chat-web (Estado)
 

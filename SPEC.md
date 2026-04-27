@@ -19,6 +19,7 @@ Asistente personal de voz multimodal basado en LiveKit. El usuario se conecta de
 - **Cliente Web (Frontend):** Interfaz web con dos modos: widget embebido (`chat-web`) y cliente full page (`chat-web-full`). Ambos funcionan en navegador y móvil y se conectan directamente a LiveKit Cloud.
 - **LiveKit Agent (Backend de voz):** Proceso Python que se une a la sala cuando el usuario se conecta.
 - **Base de datos:** SQLite con historial de conversaciones.
+- **Memoria curada en archivos:** capa Markdown en `data/memory` con `SOUL.md`, `RULES.md` y memoria por usuario (`USER.md`, `MEMORY.md`).
 
 ### 3.2 Pipeline de Interacción
 1. **Entrada:** El usuario abre el cliente web y se conecta a la sala de LiveKit.
@@ -46,6 +47,7 @@ Asistente personal de voz multimodal basado en LiveKit. El usuario se conecta de
 ### 4.2 Gestión de Sesiones
 - **Autenticación:** El cliente web obtiene token de LiveKit Cloud directamente.
 - **Persistencia:** El agente mantiene historial en SQLite para contexto de conversación.
+- **Memoria híbrida:** SQLite como fuente de verdad + archivos Markdown curados para contexto de largo plazo con menor consumo de tokens.
 - **Feature Flags de skills:** `ENABLED_SKILLS` controla carga de skills y tools opcionales.
 
 ## 5. Requisitos No Funcionales

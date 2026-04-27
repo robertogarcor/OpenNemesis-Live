@@ -32,6 +32,11 @@ from data.db import (
     get_history_with_timestamps,
     format_history_for_context,
 )
+from data.file_memory import (
+    SessionMemoryBuffer,
+    build_file_memory_context,
+    persist_session_memory,
+)
 
 load_dotenv()
 
@@ -133,6 +138,16 @@ async def my_agent(ctx: agents.JobContext):
     
     user_id = get_user_id(ctx)
     logger.info(f"User identifier: {user_id}")
+    session_memory = SessionMemoryBuffer()
+
+    async def flush_file_memory() -> None:
+        try:
+            await persist_session_memory(user_id, session_memory)
+            logger.info("File memory persisted")
+        except Exception as e:
+            logger.warning(f"Could not persist file memory: {e}")
+
+    ctx.add_shutdown_callback(flush_file_memory)
     
     db_initialized = False
     try:
@@ -145,6 +160,14 @@ async def my_agent(ctx: agents.JobContext):
     
     history_context = ""
     temporal_context = ""
+    file_memory_context = ""
+
+    try:
+        file_memory_context = build_file_memory_context(user_id)
+        logger.info("File memory context loaded")
+    except Exception as e:
+        logger.warning(f"Could not load file memory context: {e}")
+
     if db_initialized:
         try:
             history = await get_history(user_id, limit=MAX_HISTORY_CONTEXT)
@@ -162,7 +185,7 @@ async def my_agent(ctx: agents.JobContext):
     agent = AssistantAgent(user_id=user_id)
     logger.info("Agent created")
     
-    session_instructions = "".join([history_context, temporal_context]).strip()
+    session_instructions = "".join([file_memory_context, history_context, temporal_context]).strip()
     session = AgentSession(
         llm=google.realtime.RealtimeModel(
             api_key=GEMINI_API_KEY,
@@ -184,6 +207,7 @@ async def my_agent(ctx: agents.JobContext):
         cleaned = text.strip()
         if not cleaned:
             return
+        session_memory.add_user(cleaned)
         await save_message(user_id, "user", cleaned)
         await session.generate_reply(
             user_input=cleaned,
@@ -198,6 +222,7 @@ async def my_agent(ctx: agents.JobContext):
     @session.on("user_input_transcribed")
     def on_user_speech(ev):
         logger.info(f"USER SPEECH DETECTED: {ev.transcript}")
+        session_memory.add_user(ev.transcript)
         asyncio.create_task(save_message(user_id, "user", ev.transcript))
     
     @session.on("conversation_item_added")
@@ -208,6 +233,7 @@ async def my_agent(ctx: agents.JobContext):
         if ev.item.text_content:
             asyncio.create_task(save_message(user_id, "assistant", ev.item.text_content))
             if getattr(ev.item, "role", None) == "assistant":
+                session_memory.add_assistant(ev.item.text_content)
                 asyncio.create_task(publish_chat_message("assistant", ev.item.text_content))
     
     logger.info("Session created, starting...")
@@ -264,7 +290,8 @@ async def my_agent(ctx: agents.JobContext):
             temporal_context = build_temporal_context(
                 history_with_ts, now=datetime.now(LOCAL_TZ)
             )
-            combined_context = "".join([history_context, temporal_context]).strip()
+            file_memory_context = build_file_memory_context(correct_user_id)
+            combined_context = "".join([file_memory_context, history_context, temporal_context]).strip()
             if combined_context:
                 logger.info("Sending history context to agent...")
                 await session.generate_reply(instructions=combined_context)

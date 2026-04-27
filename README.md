@@ -10,6 +10,7 @@ Asistente personal de voz multimodal basado en LiveKit.
 - **Cliente Web:** LiveKit JavaScript Client
 - ** hosting:** Vercel
 - **DB:** SQLite
+- **Memoria curada:** Markdown en `data/memory` (`SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md`)
 
 ## Estructura
 
@@ -19,6 +20,7 @@ tools/             # Herramientas disponibles
 bin/               # Binarios (GOG CLI)
 chat-web/          # Widget embebido (popup)
 chat-web-full/     # Cliente web completo (full page)
+data/memory/       # Memoria curada de largo plazo
 ```
 
 ## Herramientas
