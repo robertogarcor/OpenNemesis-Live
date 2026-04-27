@@ -344,7 +344,7 @@ function ActionBar({
           >
             {(() => {
               const Icon = mic_enabled ? MicrophoneIcon : MicrophoneSlashIcon;
-              return <Icon weight="bold" size={18} />;
+              return <Icon weight="bold" size={18} color={mic_enabled ? '#1f2937' : '#c62828'} />;
             })()}
           </ToggleButton>
 
@@ -356,7 +356,7 @@ function ActionBar({
           >
             {(() => {
               const Icon = cam_enabled ? VideoCameraIcon : VideoCameraSlashIcon;
-              return <Icon weight="bold" size={18} />;
+              return <Icon weight="bold" size={18} color={cam_enabled ? '#1f2937' : '#c62828'} />;
             })()}
           </ToggleButton>
 
@@ -366,7 +366,7 @@ function ActionBar({
             on_click={() => void on_toggle_screen()}
             label="Compartir pantalla"
           >
-            <MonitorArrowUpIcon weight="bold" size={18} />
+            <MonitorArrowUpIcon weight="bold" size={18} color={screen_enabled ? '#1f2937' : '#c62828'} />
           </ToggleButton>
         </div>
 
@@ -973,21 +973,6 @@ export default function Page() {
                     {chat_open && <Transcript messages={messages} />}
                   </div>
 
-                  <ActionBar
-                    can_chat
-                    chat_open={chat_open}
-                    on_chat_open_change={set_chat_open}
-                    mic_enabled={mic_enabled}
-                    cam_enabled={cam_enabled}
-                    screen_enabled={screen_enabled}
-                    pending={pending_toggle}
-                    about_open={about_open}
-                    on_about_toggle={() => set_about_open((prev) => !prev)}
-                    on_toggle_mic={toggle_mic}
-                    on_toggle_cam={toggle_cam}
-                    on_toggle_screen={toggle_screen}
-                  />
-
                   {chat_open && (
                     <div className="mx-2 mb-3 mt-1 flex gap-2">
                       <input
@@ -1008,6 +993,21 @@ export default function Page() {
                       </button>
                     </div>
                   )}
+
+                  <ActionBar
+                    can_chat
+                    chat_open={chat_open}
+                    on_chat_open_change={set_chat_open}
+                    mic_enabled={mic_enabled}
+                    cam_enabled={cam_enabled}
+                    screen_enabled={screen_enabled}
+                    pending={pending_toggle}
+                    about_open={about_open}
+                    on_about_toggle={() => set_about_open((prev) => !prev)}
+                    on_toggle_mic={toggle_mic}
+                    on_toggle_cam={toggle_cam}
+                    on_toggle_screen={toggle_screen}
+                  />
                 </div>
               </div>
             )}
