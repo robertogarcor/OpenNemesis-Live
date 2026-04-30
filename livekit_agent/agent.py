@@ -34,8 +34,12 @@ from data.db import (
 )
 from data.file_memory import (
     SessionMemoryBuffer,
+    apply_default_persona,
     build_file_memory_context,
+    get_persona_missing_fields,
+    persist_persona_from_agent_output,
     persist_session_memory,
+    persist_realtime_user_memory,
 )
 
 load_dotenv()
@@ -139,10 +143,11 @@ async def my_agent(ctx: agents.JobContext):
     user_id = get_user_id(ctx)
     logger.info(f"User identifier: {user_id}")
     session_memory = SessionMemoryBuffer()
+    persona_prompted = False
 
     async def flush_file_memory() -> None:
         try:
-            await persist_session_memory(user_id, session_memory)
+            await persist_session_memory(session_memory)
             logger.info("File memory persisted")
         except Exception as e:
             logger.warning(f"Could not persist file memory: {e}")
@@ -163,7 +168,7 @@ async def my_agent(ctx: agents.JobContext):
     file_memory_context = ""
 
     try:
-        file_memory_context = build_file_memory_context(user_id)
+        file_memory_context = build_file_memory_context()
         logger.info("File memory context loaded")
     except Exception as e:
         logger.warning(f"Could not load file memory context: {e}")
@@ -203,12 +208,39 @@ async def my_agent(ctx: agents.JobContext):
         except Exception as e:
             logger.warning(f"Failed to publish data message: {e}")
 
+    async def process_realtime_memory_capture(text: str) -> None:
+        try:
+            lower = (text or "").lower()
+            if any(token in lower for token in ["usa por defecto", "usar por defecto", "elige tu", "elige tú"]):
+                defaults = await asyncio.to_thread(apply_default_persona)
+                summary = ", ".join(f"{k}={v}" for k, v in defaults.items())
+                await publish_chat_message("system", f"Personalidad por defecto aplicada: {summary}")
+                return
+
+            result = await persist_realtime_user_memory(text)
+            persona_updates = (result or {}).get("persona_updates", {})
+            persona_intent = bool((result or {}).get("persona_intent", False))
+            if isinstance(persona_updates, dict) and persona_updates:
+                summary = ", ".join(f"{k}={v}" for k, v in persona_updates.items())
+                missing = await asyncio.to_thread(get_persona_missing_fields)
+                if missing:
+                    summary = f"{summary}. Faltan por definir: {', '.join(missing)}"
+                await publish_chat_message("system", f"Personalidad del agente guardada: {summary}")
+            elif persona_intent:
+                await publish_chat_message(
+                    "system",
+                    "He detectado personalizacion, pero no pude extraer campos claros. Usa: config agente nombre=... tono=... estilo=... rol=...",
+                )
+        except Exception as e:
+            logger.warning(f"Could not persist realtime memory: {e}")
+
     async def handle_text_input(text: str) -> None:
         cleaned = text.strip()
         if not cleaned:
             return
         session_memory.add_user(cleaned)
         await save_message(user_id, "user", cleaned)
+        asyncio.create_task(process_realtime_memory_capture(cleaned))
         await session.generate_reply(
             user_input=cleaned,
             input_modality="text",
@@ -224,6 +256,7 @@ async def my_agent(ctx: agents.JobContext):
         logger.info(f"USER SPEECH DETECTED: {ev.transcript}")
         session_memory.add_user(ev.transcript)
         asyncio.create_task(save_message(user_id, "user", ev.transcript))
+        asyncio.create_task(process_realtime_memory_capture(ev.transcript))
     
     @session.on("conversation_item_added")
     def on_conversation_item(ev):
@@ -235,6 +268,15 @@ async def my_agent(ctx: agents.JobContext):
             if getattr(ev.item, "role", None) == "assistant":
                 session_memory.add_assistant(ev.item.text_content)
                 asyncio.create_task(publish_chat_message("assistant", ev.item.text_content))
+                async def _persist_from_output(text: str) -> None:
+                    try:
+                        updates = await persist_persona_from_agent_output(text)
+                        if updates:
+                            logger.info(f"Persona updated from assistant output: {updates}")
+                    except Exception as e:
+                        logger.warning(f"Could not persist persona from assistant output: {e}")
+
+                asyncio.create_task(_persist_from_output(ev.item.text_content))
     
     logger.info("Session created, starting...")
     
@@ -250,6 +292,16 @@ async def my_agent(ctx: agents.JobContext):
                 ),
     )
     logger.info("Session started successfully!")
+
+    missing_fields = await asyncio.to_thread(get_persona_missing_fields)
+    if missing_fields and not persona_prompted:
+        persona_prompted = True
+        await publish_chat_message(
+            "system",
+            "Me falta definir mi personalidad ({fields}). Puedes decirmela natural o usar: config agente nombre=... tono=... estilo=... rol=...; tambien puedes decir 'usa por defecto'.".format(
+                fields=", ".join(missing_fields)
+            ),
+        )
 
     @ctx.room.on("data_received")
     def on_data_received(packet: rtc.DataPacket):
@@ -290,7 +342,7 @@ async def my_agent(ctx: agents.JobContext):
             temporal_context = build_temporal_context(
                 history_with_ts, now=datetime.now(LOCAL_TZ)
             )
-            file_memory_context = build_file_memory_context(correct_user_id)
+            file_memory_context = build_file_memory_context()
             combined_context = "".join([file_memory_context, history_context, temporal_context]).strip()
             if combined_context:
                 logger.info("Sending history context to agent...")

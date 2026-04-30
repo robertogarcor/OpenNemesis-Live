@@ -10,7 +10,7 @@ Asistente personal de voz multimodal basado en LiveKit.
 - **Cliente Web:** LiveKit JavaScript Client
 - ** hosting:** Vercel
 - **DB:** SQLite
-- **Memoria curada:** Markdown en `data/memory` (`SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md`)
+- **Memoria curada:** Markdown personal en `data/memory` (`SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md`)
 
 ## Estructura
 
@@ -124,3 +124,27 @@ Abre `http://localhost:3000` para usar el cliente full page (sin burbuja).
 - [AGENTS.md](./AGENTS.md) - Instrucciones para agentes
 - [MEMORIA.md](./MEMORIA.md) - Estado del proyecto
 - [CHANGELOG.md](./CHANGELOG.md) - Registro de cambios
+
+## Memoria curada (personal)
+
+El agente usa memoria en `data/memory/`:
+
+- `SOUL.md` -> identidad y personalidad del agente (Name/Tone/Style/Role)
+- `RULES.md` -> reglas operativas base
+- `USER.md` -> perfil y preferencias del usuario
+- `MEMORY.md` -> notas de sesiones y resumen de largo plazo
+
+Puedes personalizar al agente con lenguaje natural, por ejemplo:
+
+- `Te llamas Niobe`
+- `Tu tono es agradable y profesional`
+- `Responde de forma breve y tecnica`
+- `Actua como mi asistente personal para correo, calendario y tareas`
+
+Tambien puedes usar modo explicito:
+
+```bash
+config agente nombre=Niobe tono=profesional estilo=conciso rol=asistente personal
+```
+
+Si faltan campos de personalidad al iniciar, el agente te lo indicara y puedes decir `usa por defecto`.
