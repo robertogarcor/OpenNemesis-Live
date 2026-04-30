@@ -796,14 +796,23 @@ export default function Page() {
                     {chat_open && (
                       <div className="shrink-0 pb-1">
                         <div className="mx-2 mt-1 mb-2 flex gap-2">
-                          <input
+                          <textarea
                             value={input_text}
                             onChange={(e) => set_input_text(e.target.value)}
+                            onInput={(e) => {
+                              const el = e.currentTarget;
+                              el.style.height = 'auto';
+                              el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+                            }}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') void send_text();
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                void send_text();
+                              }
                             }}
                             placeholder="Escribe aqui..."
-                            className="h-11 w-full rounded-[18px] border border-separator1/80 bg-transparent px-3 text-sm text-fg1 placeholder:text-fg4 outline-none focus:ring-2 focus:ring-fgAccent/30"
+                            rows={1}
+                            className="min-h-11 max-h-36 w-full resize-none overflow-y-auto rounded-[18px] border border-separator1/80 bg-transparent px-3 py-2 text-sm text-fg1 placeholder:text-fg4 outline-none focus:ring-2 focus:ring-fgAccent/30"
                           />
                           <button
                             type="button"
