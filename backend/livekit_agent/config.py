@@ -5,12 +5,21 @@ Variables de configuración del agente
 
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
-env_path = Path(".env.local")
-if env_path.exists():
-    load_dotenv(env_path)
+# Cargar variables de entorno (root preferido, fallback local)
+ROOT_DIR = Path(__file__).resolve().parents[2]
+_env_candidates = [
+    ROOT_DIR / ".env.local",
+    ROOT_DIR / ".env",
+    Path.cwd() / ".env.local",
+    Path.cwd() / ".env",
+]
+for env_path in _env_candidates:
+    if env_path.exists():
+        load_dotenv(env_path)
+        break
 
 # LiveKit Configuration
 LIVEKIT_URL = os.getenv("LIVEKIT_URL", "")

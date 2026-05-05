@@ -10,17 +10,16 @@ Asistente personal de voz multimodal basado en LiveKit.
 - **Cliente Web:** LiveKit JavaScript Client
 - ** hosting:** Vercel
 - **DB:** SQLite
-- **Memoria curada:** Markdown personal en `data/memory` (`SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md`)
+- **Memoria curada:** Markdown personal en `backend/data/memory` (`SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md`)
 
 ## Estructura
 
 ```
-livekit_agent/     # Agente de voz
-tools/             # Herramientas disponibles
+backend/           # Backend LiveKit (agent, tools, data, tests)
 bin/               # Binarios (GOG CLI)
 chat-web/          # Widget embebido (popup)
 chat-web-full/     # Cliente web completo (full page)
-data/memory/       # Memoria curada de largo plazo
+backend/data/memory/  # Memoria curada de largo plazo
 ```
 
 ## Herramientas
@@ -52,10 +51,10 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Instalar dependencias
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 
 # Configurar variables
-cp .env.local.example .env.local
+cp .env.example .env.local
 # Editar .env.local con tus credenciales
 
 # Iniciar agente
@@ -127,7 +126,7 @@ Abre `http://localhost:3000` para usar el cliente full page (sin burbuja).
 
 ## Memoria curada (personal)
 
-El agente usa memoria en `data/memory/`:
+El agente usa memoria en `backend/data/memory/`:
 
 - `SOUL.md` -> identidad y personalidad del agente (Name/Tone/Style/Role)
 - `RULES.md` -> reglas operativas base

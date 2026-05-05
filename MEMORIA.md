@@ -6,14 +6,14 @@ Asistente de voz multimodal basado en LiveKit.
 ## Arquitectura
 
 ### Componentes
-- **livekit_agent/agent.py**: Agente de voz con Gemini Realtime
-- **data/db.py**: Persistencia SQLite para historial
-- **data/file_memory.py**: Memoria curada personal en Markdown (SOUL/RULES/USER/MEMORY)
-- **tools/tools.py**: Herramientas primarias del agente
-- **tools/obsidian_tools.py**: Herramientas de Obsidian (notas y tareas)
-- **skills/loader.py**: Sistema de skills
-- **main.py**: Entry point
-- **livekit_agent/status.py**: Verificación de servicios
+- **backend/livekit_agent/agent.py**: Agente de voz con Gemini Realtime
+- **backend/data/db.py**: Persistencia SQLite para historial
+- **backend/data/file_memory.py**: Memoria curada personal en Markdown (SOUL/RULES/USER/MEMORY)
+- **backend/tools/tools.py**: Herramientas primarias del agente
+- **backend/tools/obsidian_tools.py**: Herramientas de Obsidian (notas y tareas)
+- **backend/skills/loader.py**: Sistema de skills
+- **backend/main.py**: Entry point backend
+- **backend/livekit_agent/status.py**: Verificación de servicios
 - **chat-web/**: Widget embebido tipo popup (Next.js) inspirado en agent-starter-embed
 - **chat-web-full/**: Cliente web completo (full page) en Next.js
 
@@ -22,7 +22,7 @@ Asistente de voz multimodal basado en LiveKit.
 - LiveKit Agents SDK
 - Google Gemini (gemini-2.5-flash-native-audio-latest)
 - SQLite (aiosqlite)
-- Memoria híbrida: SQLite + archivos Markdown en `data/memory/`
+- Memoria híbrida: SQLite + archivos Markdown en `backend/data/memory/`
 - GOG CLI para Google Workspace
 - Next.js 15 + React (Frontend)
 - Tailwind CSS v4 (chat-web y chat-web-full)

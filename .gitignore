@@ -28,8 +28,8 @@ Thumbs.db
 *.log
 
 # Data
-data/*.db
-data/conversations.db
+backend/data/*.db
+backend/data/conversations.db
 
 # Distribution / packaging
 dist/
