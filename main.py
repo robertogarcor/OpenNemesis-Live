@@ -5,9 +5,9 @@ Punto de entrada: python main.py <modo>
 
 import logging
 import os
+import subprocess
 import sys
 from pathlib import Path
-import subprocess
 
 from dotenv import load_dotenv
 from livekit_agent.config import validate_config

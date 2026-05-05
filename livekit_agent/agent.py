@@ -4,16 +4,14 @@ Punto de entrada: python main.py dev|console
 """
 
 import asyncio
-import logging
 import json
-from datetime import datetime, timedelta
+import logging
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 from livekit import agents, rtc
-from livekit.agents import AgentServer, AgentSession, Agent, room_io
-from livekit.plugins import google
-from livekit.plugins import noise_cancellation
+from livekit.agents import Agent, AgentSession, room_io
+from livekit.plugins import google, noise_cancellation
 
 from livekit_agent.config import (
     GEMINI_API_KEY,
@@ -25,21 +23,22 @@ from livekit_agent.config import (
 from tools.tools import AVAILABLE_TOOLS
 from prompt import get_system_prompt
 from data.db import (
-    init_db,
     close_db,
-    save_message,
-    get_history,
-    get_history_with_timestamps,
     format_history_for_context,
+    get_history,
+    init_db,
+    save_message,
 )
 from data.file_memory import (
     SessionMemoryBuffer,
-    apply_default_persona,
-    build_file_memory_context,
     get_persona_missing_fields,
-    persist_persona_from_agent_output,
     persist_session_memory,
-    persist_realtime_user_memory,
+)
+from livekit_agent.context_builder import load_context
+from livekit_agent.realtime_memory import (
+    make_chat_publisher,
+    persist_persona_updates_from_output,
+    process_realtime_memory_capture,
 )
 
 load_dotenv()
@@ -91,51 +90,6 @@ class AssistantAgent(Agent):
         await save_message(self.user_id, "assistant", message)
 
 
-def _normalize_dt(value: datetime | None) -> datetime | None:
-    if value is None:
-        return None
-    if value.tzinfo is None:
-        return value.replace(tzinfo=LOCAL_TZ)
-    return value.astimezone(LOCAL_TZ)
-
-
-def build_temporal_context(messages: list, now: datetime) -> str:
-    if not messages:
-        return ""
-
-    window = timedelta(hours=TEMPORAL_WINDOW_HOURS)
-    recent = []
-    for msg in messages:
-        created_at = _normalize_dt(msg.get("created_at"))
-        if created_at is None:
-            continue
-        if now - created_at <= window:
-            recent.append({**msg, "created_at": created_at})
-
-    if not recent:
-        return ""
-
-    last_user = next((m for m in reversed(recent) if m.get("role") == "user"), None)
-    if not last_user:
-        return ""
-
-    last_time = last_user["created_at"]
-    label = "hoy" if last_time.date() == now.date() else "ayer"
-    content = (last_user.get("content") or "").strip()
-    if len(content) > 200:
-        content = content[:197] + "..."
-
-    return "\n".join(
-        [
-            "",
-            "=== CONTEXTO TEMPORAL (ULTIMAS 36H) ===",
-            "Usa esto solo si aporta contexto a la respuesta.",
-            f"Hablaste con el usuario {label} sobre: {content}",
-            "======================================",
-        ]
-    )
-
-
 async def my_agent(ctx: agents.JobContext):
     logger.info(f"User connected to room: {ctx.room.name}")
     logger.info(f"Room participants: {list(ctx.room.remote_participants.keys())}")
@@ -163,34 +117,19 @@ async def my_agent(ctx: agents.JobContext):
     except Exception as e:
         logger.warning(f"DB init skipped: {e}")
     
-    history_context = ""
-    temporal_context = ""
-    file_memory_context = ""
-
-    try:
-        file_memory_context = build_file_memory_context()
-        logger.info("File memory context loaded")
-    except Exception as e:
-        logger.warning(f"Could not load file memory context: {e}")
-
-    if db_initialized:
-        try:
-            history = await get_history(user_id, limit=MAX_HISTORY_CONTEXT)
-            history_with_ts = await get_history_with_timestamps(
-                user_id, limit=MAX_HISTORY_CONTEXT
-            )
-            logger.info(f"Loaded {len(history)} messages from history")
-            history_context = format_history_for_context(history, max_messages=MAX_HISTORY_CONTEXT)
-            temporal_context = build_temporal_context(
-                history_with_ts, now=datetime.now(LOCAL_TZ)
-            )
-        except Exception as e:
-            logger.warning(f"Could not load history: {e}")
+    loaded_context = await load_context(
+        user_id=user_id,
+        db_initialized=db_initialized,
+        max_history_context=MAX_HISTORY_CONTEXT,
+        local_tz=LOCAL_TZ,
+        temporal_window_hours=TEMPORAL_WINDOW_HOURS,
+        logger=logger,
+    )
     
     agent = AssistantAgent(user_id=user_id)
     logger.info("Agent created")
     
-    session_instructions = "".join([file_memory_context, history_context, temporal_context]).strip()
+    session_instructions = loaded_context.combined
     session = AgentSession(
         llm=google.realtime.RealtimeModel(
             api_key=GEMINI_API_KEY,
@@ -201,38 +140,7 @@ async def my_agent(ctx: agents.JobContext):
         ),
     )
 
-    async def publish_chat_message(role: str, text: str) -> None:
-        payload = json.dumps({"type": "chat", "role": role, "text": text})
-        try:
-            await ctx.room.local_participant.publish_data(payload, reliable=True)
-        except Exception as e:
-            logger.warning(f"Failed to publish data message: {e}")
-
-    async def process_realtime_memory_capture(text: str) -> None:
-        try:
-            lower = (text or "").lower()
-            if any(token in lower for token in ["usa por defecto", "usar por defecto", "elige tu", "elige tú"]):
-                defaults = await asyncio.to_thread(apply_default_persona)
-                summary = ", ".join(f"{k}={v}" for k, v in defaults.items())
-                await publish_chat_message("system", f"Personalidad por defecto aplicada: {summary}")
-                return
-
-            result = await persist_realtime_user_memory(text)
-            persona_updates = (result or {}).get("persona_updates", {})
-            persona_intent = bool((result or {}).get("persona_intent", False))
-            if isinstance(persona_updates, dict) and persona_updates:
-                summary = ", ".join(f"{k}={v}" for k, v in persona_updates.items())
-                missing = await asyncio.to_thread(get_persona_missing_fields)
-                if missing:
-                    summary = f"{summary}. Faltan por definir: {', '.join(missing)}"
-                await publish_chat_message("system", f"Personalidad del agente guardada: {summary}")
-            elif persona_intent:
-                await publish_chat_message(
-                    "system",
-                    "He detectado personalizacion, pero no pude extraer campos claros. Usa: config agente nombre=... tono=... estilo=... rol=...",
-                )
-        except Exception as e:
-            logger.warning(f"Could not persist realtime memory: {e}")
+    publish_chat_message = make_chat_publisher(ctx, logger)
 
     async def handle_text_input(text: str) -> None:
         cleaned = text.strip()
@@ -240,7 +148,9 @@ async def my_agent(ctx: agents.JobContext):
             return
         session_memory.add_user(cleaned)
         await save_message(user_id, "user", cleaned)
-        asyncio.create_task(process_realtime_memory_capture(cleaned))
+        asyncio.create_task(
+            process_realtime_memory_capture(cleaned, publish_chat_message, logger)
+        )
         await session.generate_reply(
             user_input=cleaned,
             input_modality="text",
@@ -256,7 +166,9 @@ async def my_agent(ctx: agents.JobContext):
         logger.info(f"USER SPEECH DETECTED: {ev.transcript}")
         session_memory.add_user(ev.transcript)
         asyncio.create_task(save_message(user_id, "user", ev.transcript))
-        asyncio.create_task(process_realtime_memory_capture(ev.transcript))
+        asyncio.create_task(
+            process_realtime_memory_capture(ev.transcript, publish_chat_message, logger)
+        )
     
     @session.on("conversation_item_added")
     def on_conversation_item(ev):
@@ -268,15 +180,9 @@ async def my_agent(ctx: agents.JobContext):
             if getattr(ev.item, "role", None) == "assistant":
                 session_memory.add_assistant(ev.item.text_content)
                 asyncio.create_task(publish_chat_message("assistant", ev.item.text_content))
-                async def _persist_from_output(text: str) -> None:
-                    try:
-                        updates = await persist_persona_from_agent_output(text)
-                        if updates:
-                            logger.info(f"Persona updated from assistant output: {updates}")
-                    except Exception as e:
-                        logger.warning(f"Could not persist persona from assistant output: {e}")
-
-                asyncio.create_task(_persist_from_output(ev.item.text_content))
+                asyncio.create_task(
+                    persist_persona_updates_from_output(ev.item.text_content, logger)
+                )
     
     logger.info("Session created, starting...")
     
@@ -328,9 +234,6 @@ async def my_agent(ctx: agents.JobContext):
         if db_initialized and correct_user_id != user_id:
             logger.info("Reloading history with correct user_id...")
             history = await get_history(correct_user_id, limit=MAX_HISTORY_CONTEXT)
-            history_with_ts = await get_history_with_timestamps(
-                correct_user_id, limit=MAX_HISTORY_CONTEXT
-            )
             logger.info(f"Loaded {len(history)} messages from history for user: {correct_user_id}")
             
             # Actualizar el user_id del agent
@@ -338,12 +241,20 @@ async def my_agent(ctx: agents.JobContext):
             user_id = correct_user_id
             
             # Regenerar instrucciones con el historial correcto
-            history_context = format_history_for_context(history, max_messages=MAX_HISTORY_CONTEXT)
-            temporal_context = build_temporal_context(
-                history_with_ts, now=datetime.now(LOCAL_TZ)
+            history_context = format_history_for_context(
+                history, max_messages=MAX_HISTORY_CONTEXT
             )
-            file_memory_context = build_file_memory_context()
-            combined_context = "".join([file_memory_context, history_context, temporal_context]).strip()
+            refreshed = await load_context(
+                user_id=correct_user_id,
+                db_initialized=True,
+                max_history_context=MAX_HISTORY_CONTEXT,
+                local_tz=LOCAL_TZ,
+                temporal_window_hours=TEMPORAL_WINDOW_HOURS,
+                logger=logger,
+            )
+            combined_context = "".join(
+                [refreshed.file_memory_context, history_context, refreshed.temporal_context]
+            ).strip()
             if combined_context:
                 logger.info("Sending history context to agent...")
                 await session.generate_reply(instructions=combined_context)

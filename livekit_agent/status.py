@@ -4,16 +4,19 @@ Verificación de servicios y estado del sistema
 """
 
 import logging
+import os
+import subprocess
+
 import requests
+
+from livekit_agent.config import (
+    GEMINI_API_KEY,
+    LIVEKIT_URL,
+)
 
 
 def check_services():
     """Verifica que los servicios estén conectados y activos."""
-    import os
-    from livekit_agent.config import (
-        LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET,
-        GEMINI_API_KEY
-    )
     GOGCLI_PATH = os.getenv("GOGCLI_PATH", "bin/gogcli/gog")
     
     logger = logging.getLogger("OpenNemesis-Live")
@@ -63,7 +66,6 @@ def check_services():
     
     # Verificar GOG CLI
     try:
-        import subprocess
         GOGCLI_PATH = os.getenv("GOGCLI_PATH", "bin/gogcli")
         gog_executable = GOGCLI_PATH if GOGCLI_PATH.endswith("/gog") or GOGCLI_PATH.endswith("gog") else os.path.join(GOGCLI_PATH, "gog")
         result = subprocess.run(
