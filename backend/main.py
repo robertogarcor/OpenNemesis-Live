@@ -21,7 +21,12 @@ if str(BACKEND_DIR) not in sys.path:
 from backend.livekit_agent.config import validate_config
 from backend.livekit_agent.status import startup
 
-env_files = [ROOT_DIR / ".env.local", ROOT_DIR / ".env", Path(".env.local"), Path(".env")]
+env_files = [
+    BACKEND_DIR / ".env.local",
+    BACKEND_DIR / ".env",
+    Path(".env.local"),
+    Path(".env"),
+]
 for env_path in env_files:
     if env_path.exists():
         load_dotenv(env_path)

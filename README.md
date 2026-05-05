@@ -53,13 +53,21 @@ source venv/bin/activate
 # Instalar dependencias
 pip install -r backend/requirements.txt
 
-# Configurar variables
-cp .env.example .env.local
-# Editar .env.local con tus credenciales
+# Configurar variables del backend
+cp backend/.env.example backend/.env.local
+# Editar backend/.env.local con tus credenciales
 
 # Iniciar agente
 python backend/main.py dev
 ```
+
+### Variables por servicio (desacoplado)
+
+- Backend: `backend/.env.local` (plantilla: `backend/.env.example`)
+- chat-web: `chat-web/.env.local` (plantilla: `chat-web/.env.example`)
+- chat-web-full: `chat-web-full/.env.local` (plantilla: `chat-web-full/.env.example`)
+
+Cada servicio lee su propio `.env.local`.
 
 ### GOG (Gmail/Calendar)
 

@@ -8,11 +8,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Cargar variables de entorno (root preferido, fallback local)
-ROOT_DIR = Path(__file__).resolve().parents[2]
+# Cargar variables de entorno del backend (desacoplado)
+BACKEND_DIR = Path(__file__).resolve().parents[1]
 _env_candidates = [
-    ROOT_DIR / ".env.local",
-    ROOT_DIR / ".env",
+    BACKEND_DIR / ".env.local",
+    BACKEND_DIR / ".env",
     Path.cwd() / ".env.local",
     Path.cwd() / ".env",
 ]
