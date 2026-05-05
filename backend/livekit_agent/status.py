@@ -6,10 +6,11 @@ Verificación de servicios y estado del sistema
 import logging
 import os
 import subprocess
+from pathlib import Path
 
 import requests
 
-from livekit_agent.config import (
+from backend.livekit_agent.config import (
     GEMINI_API_KEY,
     LIVEKIT_URL,
 )
@@ -50,7 +51,7 @@ def check_services():
     
     # Verificar Skills
     try:
-        from skills.loader import get_skill_names
+        from backend.skills.loader import get_skill_names
         skills = get_skill_names()
         skill_list = ", ".join(skills) if skills else "none"
         status["skills"] = f"✅ OK ({skill_list})"
@@ -59,17 +60,25 @@ def check_services():
     
     # Verificar Tools
     try:
-        from tools.tools import AVAILABLE_TOOLS
+        from backend.tools.tools import AVAILABLE_TOOLS
         status["tools"] = f"✅ OK ({len(AVAILABLE_TOOLS)} tools)"
     except Exception as e:
         status["tools"] = f"❌ Error: {str(e)[:30]}"
     
     # Verificar GOG CLI
     try:
-        GOGCLI_PATH = os.getenv("GOGCLI_PATH", "bin/gogcli")
-        gog_executable = GOGCLI_PATH if GOGCLI_PATH.endswith("/gog") or GOGCLI_PATH.endswith("gog") else os.path.join(GOGCLI_PATH, "gog")
+        root_dir = Path(__file__).resolve().parents[2]
+        gog_env = os.getenv("GOGCLI_PATH", "")
+        if gog_env:
+            gog_base = Path(gog_env)
+            if not gog_base.is_absolute():
+                gog_base = (root_dir / gog_base).resolve()
+        else:
+            gog_base = (root_dir / "bin" / "gogcli").resolve()
+
+        gog_executable = gog_base if gog_base.name == "gog" else gog_base / "gog"
         result = subprocess.run(
-            [gog_executable, "version"],
+            [str(gog_executable), "version"],
             capture_output=True,
             timeout=5
         )
@@ -77,8 +86,10 @@ def check_services():
             version = result.stdout.decode().strip()[:20]
             status["gog"] = f"✅ OK ({version})"
         else:
-            status["gog"] = "❌ Error"
-    except Exception as e:
+            status["gog"] = "❌ Error ejecutando gog"
+    except FileNotFoundError:
+        status["gog"] = "⏸️ BINARIO NO ENCONTRADO"
+    except Exception:
         status["gog"] = "⏸️ NOT CONFIGURED"
     
     return status

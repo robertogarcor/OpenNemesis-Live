@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Set
 
 logger = logging.getLogger("OpenNemesis.SkillsLoader")
 
-SKILLS_DIR = Path("skills")
+SKILLS_DIR = Path(__file__).resolve().parent
 
 
 def get_enabled_skills() -> Optional[Set[str]]:

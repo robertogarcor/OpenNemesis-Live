@@ -10,10 +10,17 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from livekit_agent.config import validate_config
-from livekit_agent.status import startup
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+BACKEND_DIR = Path(__file__).resolve().parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+from backend.livekit_agent.config import validate_config
+from backend.livekit_agent.status import startup
+
 env_files = [ROOT_DIR / ".env.local", ROOT_DIR / ".env", Path(".env.local"), Path(".env")]
 for env_path in env_files:
     if env_path.exists():
@@ -23,17 +30,23 @@ for env_path in env_files:
 
 def run_livekit(mode: str = "dev"):
     """Ejecuta el agente de LiveKit."""
-    project_dir = Path(__file__).parent
+    backend_dir = BACKEND_DIR
     
     env = os.environ.copy()
-    env["PYTHONPATH"] = str(project_dir)
+    env["PYTHONPATH"] = os.pathsep.join(
+        [
+            str(ROOT_DIR),
+            str(backend_dir),
+            env.get("PYTHONPATH", ""),
+        ]
+    ).strip(os.pathsep)
     
-    agent_script = project_dir / "livekit_agent" / "agent.py"
+    agent_script = backend_dir / "livekit_agent" / "agent.py"
     args = [sys.executable, str(agent_script), mode]
     
     process = subprocess.Popen(
         args,
-        cwd=str(project_dir),
+        cwd=str(backend_dir),
         env=env,
     )
     

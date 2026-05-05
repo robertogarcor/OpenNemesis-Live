@@ -58,7 +58,7 @@ cp .env.example .env.local
 # Editar .env.local con tus credenciales
 
 # Iniciar agente
-python main.py dev
+python backend/main.py dev
 ```
 
 ### GOG (Gmail/Calendar)
