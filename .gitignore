@@ -44,4 +44,4 @@ bin/gogcli/*
 !bin/gogcli/gog
 
 # Credentials (OAuth, API keys, etc.)
-credentials/
+backend/credentials/

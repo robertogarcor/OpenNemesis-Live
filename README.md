@@ -73,6 +73,8 @@ Cada servicio lee su propio `.env.local`.
 
 Primero registra las credenciales OAuth de Google (client secret):
 
+Guarda tu `client_secret.json` en `backend/credentials/` (o usa una ruta absoluta segura).
+
 ```bash
 ./bin/gogcli/gog auth credentials /path/to/client_secret.json
 ```
@@ -85,7 +87,7 @@ Despues autoriza la cuenta y servicios:
 
 Notas:
 
-- El directorio `credentials/` es local para secretos OAuth y **no se sube a Git**.
+- El directorio `backend/credentials/` es local para secretos OAuth y **no se sube a Git**.
 - No compartas ni subas `client_secret.json` ni tokens de acceso.
 
 ### Obsidian (vault local)
