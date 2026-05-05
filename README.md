@@ -63,11 +63,22 @@ python main.py dev
 
 ### GOG (Gmail/Calendar)
 
-Para activar o renovar el token:
+Primero registra las credenciales OAuth de Google (client secret):
+
+```bash
+./bin/gogcli/gog auth credentials /path/to/client_secret.json
+```
+
+Despues autoriza la cuenta y servicios:
 
 ```bash
 ./bin/gogcli/gog auth add you@gmail.com --services gmail,calendar
 ```
+
+Notas:
+
+- El directorio `credentials/` es local para secretos OAuth y **no se sube a Git**.
+- No compartas ni subas `client_secret.json` ni tokens de acceso.
 
 ### Obsidian (vault local)
 
