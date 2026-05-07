@@ -59,6 +59,9 @@ cp backend/.env.example backend/.env.local
 
 # Iniciar agente
 python backend/main.py dev
+
+# (Opcional) Iniciar API de estado/health
+uvicorn backend.api:app --host 0.0.0.0 --port 8000
 ```
 
 ### Variables por servicio (desacoplado)
@@ -68,6 +71,13 @@ python backend/main.py dev
 - chat-web-full: `chat-web-full/.env.local` (plantilla: `chat-web-full/.env.example`)
 
 Cada servicio lee su propio `.env.local`.
+
+### API backend (opcional)
+
+La API no reemplaza al worker de LiveKit; se ejecuta aparte para observabilidad:
+
+- `GET /health` -> estado básico del proceso
+- `GET /status` -> estado de servicios (livekit, gemini, skills, tools, gog)
 
 ### GOG (Gmail/Calendar)
 

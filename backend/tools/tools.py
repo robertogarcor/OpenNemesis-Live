@@ -9,7 +9,7 @@ import requests
 from ddgs import DDGS
 from livekit.agents import function_tool, RunContext
 
-from tools.obsidian_tools import OBSIDIAN_TOOLS
+from backend.tools.obsidian_tools import OBSIDIAN_TOOLS
 
 
 logger = logging.getLogger("OpenNemesis-Live.Tools")
