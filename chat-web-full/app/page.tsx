@@ -344,6 +344,14 @@ export default function Page() {
   const [input_text, set_input_text] = React.useState('');
   const [ui_notice, set_ui_notice] = React.useState<string | null>(null);
   const notice_timeout_ref = React.useRef<number | null>(null);
+  const input_textarea_ref = React.useRef<HTMLTextAreaElement | null>(null);
+
+  const resize_input_textarea = React.useCallback(() => {
+    const el = input_textarea_ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+  }, []);
 
   const local_participant = room.localParticipant;
   const local_camera_track = React.useMemo(() => {
@@ -520,6 +528,11 @@ export default function Page() {
   React.useEffect(() => {
     void connect_room();
   }, [connect_room]);
+
+  React.useEffect(() => {
+    if (!chat_open) return;
+    resize_input_textarea();
+  }, [chat_open, input_text, resize_input_textarea]);
 
   React.useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -795,15 +808,12 @@ export default function Page() {
 
                     {chat_open && (
                       <div className="shrink-0 pb-1">
-                        <div className="mx-2 mt-1 mb-2 flex gap-2">
+                        <div className="mx-2 mt-1 mb-2 flex items-end gap-2">
                           <textarea
+                            ref={input_textarea_ref}
                             value={input_text}
                             onChange={(e) => set_input_text(e.target.value)}
-                            onInput={(e) => {
-                              const el = e.currentTarget;
-                              el.style.height = 'auto';
-                              el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
-                            }}
+                            onInput={resize_input_textarea}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
@@ -812,7 +822,7 @@ export default function Page() {
                             }}
                             placeholder="Escribe aqui..."
                             rows={1}
-                            className="min-h-11 max-h-36 w-full resize-none overflow-y-auto rounded-[18px] border border-separator1/80 bg-transparent px-3 py-2 text-sm text-fg1 placeholder:text-fg4 outline-none focus:ring-2 focus:ring-fgAccent/30"
+                            className="no-scrollbar min-h-11 max-h-36 w-full resize-none overflow-y-auto rounded-[18px] border border-separator1/80 bg-transparent px-3 py-[10px] text-sm leading-5 text-fg1 placeholder:text-fg4 outline-none focus:ring-2 focus:ring-fgAccent/30"
                           />
                           <button
                             type="button"
