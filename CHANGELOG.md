@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026-05-13]
+- feat(api): añadir health/status opcional (3681e6f)
+- fix(ui): pulir textarea multilinea chat (3c71e82)
+
 ## [2026-04-23]
 - feat(obsidian): mejorar tareas por bóveda y flags (b76ae20)
 

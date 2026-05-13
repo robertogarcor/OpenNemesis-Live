@@ -1,180 +1,157 @@
 # OpenNemesis-Live
 
-Asistente personal de voz multimodal basado en LiveKit.
+Asistente personal de voz multimodal con LiveKit + Gemini, orientado a productividad personal (voz, chat, Gmail/Calendar y Obsidian).
 
-## Tech Stack
+## Estado actual
 
-- **Lenguaje:** Python >= 3.10
-- **IA:** Gemini 2.5 Flash (soporte audio nativo)
-- **Voz:** LiveKit Agents SDK
-- **Cliente Web:** LiveKit JavaScript Client
-- ** hosting:** Vercel
-- **DB:** SQLite
-- **Memoria curada:** Markdown personal en `backend/data/memory` (`SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md`)
+- Backend desacoplado en `backend/` con entrypoint oficial `python backend/main.py dev`
+- Dos clientes web separados:
+  - `chat-web/` -> widget embebido tipo popup
+  - `chat-web-full/` -> cliente full-page
+- Memoria híbrida activa:
+  - Historial en SQLite
+  - Memoria curada en Markdown (`SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md`)
+- API opcional de observabilidad en `backend/api.py` (`/health`, `/status`)
 
-## Estructura
+## Arquitectura
 
-```
-backend/           # Backend LiveKit (agent, tools, data, tests)
-bin/               # Binarios (GOG CLI)
-chat-web/          # Widget embebido (popup)
-chat-web-full/     # Cliente web completo (full page)
-backend/data/memory/  # Memoria curada de largo plazo
-```
+Cliente Web <-> LiveKit Cloud <-> Agente de Voz (Python)
 
-## Herramientas
+- `backend/` -> orquestación del agente, tools, skills, persistencia y tests
+- `backend/data/memory/` -> memoria curada personal (SOUL/RULES/USER/MEMORY)
+- `chat-web/` -> interfaz embebida
+- `chat-web-full/` -> interfaz completa
+- `bin/gogcli/gog` -> integración CLI con Gmail/Calendar
+- Obsidian local -> vault del usuario para búsqueda de notas y gestión de tareas
 
-- `execute_command` - Gmail/Calendar via GOG CLI
-- `get_weather` - Clima actual
-- `search_web` - Búsqueda en tiempo real
-- `get_time` - Fechas y zonas horarias
-- `obsidian_search` - Buscar notas en vault local
-- `obsidian_get_vault` - Ver bóveda activa
-- `obsidian_set_vault` - Cambiar bóveda activa (sesión)
-- `obsidian_tasks_vault` - Listar tareas de toda la bóveda
-- `obsidian_tasks` - Listar tareas Markdown
-- `obsidian_add` - Crear tarea en nota
-- `obsidian_complete` - Completar tarea en nota
-- `obsidian_create_vault` - Crear una nueva bóveda
-- `obsidian_tasks_in_vault` - Listar tareas de una bóveda específica
+## Stack
 
-## Setup
+- Python 3.10+
+- LiveKit Agents SDK
+- Gemini Realtime (`gemini-2.5-flash-native-audio-latest`)
+- SQLite (`aiosqlite`)
+- Next.js + React + Tailwind CSS
 
-### Requisitos Previos
-- Python 3.10+ con entorno virtual (`venv`)
+## Quickstart
+
+### 1) Backend
 
 ```bash
-# Crear entorno virtual
-python3 -m venv venv
-
-# Activar entorno virtual
-source venv/bin/activate
-
-# Instalar dependencias
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r backend/requirements.txt
 
-# Configurar variables del backend
 cp backend/.env.example backend/.env.local
-# Editar backend/.env.local con tus credenciales
+# Edita backend/.env.local con tus credenciales
 
-# Iniciar agente
 python backend/main.py dev
-
-# (Opcional) Iniciar API de estado/health
-uvicorn backend.api:app --host 0.0.0.0 --port 8000
 ```
 
-### Variables por servicio (desacoplado)
+### 2) API opcional (health/status)
+
+En otra terminal, con el mismo venv activo:
+
+```bash
+python -m uvicorn backend.api:app --host 0.0.0.0 --port 8000
+```
+
+Endpoints:
+
+- `GET /health` -> estado básico del proceso
+- `GET /status` -> estado de `livekit`, `gemini`, `skills`, `tools`, `gog`
+
+### 3) Frontend embebido (`chat-web`)
+
+```bash
+cd chat-web
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+### 4) Frontend full-page (`chat-web-full`)
+
+```bash
+cd chat-web-full
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+## Variables de entorno por servicio
 
 - Backend: `backend/.env.local` (plantilla: `backend/.env.example`)
-- chat-web: `chat-web/.env.local` (plantilla: `chat-web/.env.example`)
-- chat-web-full: `chat-web-full/.env.local` (plantilla: `chat-web-full/.env.example`)
+- Widget: `chat-web/.env.local` (plantilla: `chat-web/.env.example`)
+- Full page: `chat-web-full/.env.local` (plantilla: `chat-web-full/.env.example`)
 
 Cada servicio lee su propio `.env.local`.
 
-### API backend (opcional)
+## Tools disponibles
 
-La API no reemplaza al worker de LiveKit; se ejecuta aparte para observabilidad:
+- `weather`, `time`, `search`
+- `command` (uso principal: GOG Gmail/Calendar)
+- `obsidian_get_vault`, `obsidian_set_vault`, `obsidian_search`
+- `obsidian_tasks_vault`, `obsidian_tasks`, `obsidian_add`, `obsidian_complete`
+- `obsidian_create_vault`, `obsidian_tasks_in_vault`
 
-- `GET /health` -> estado básico del proceso
-- `GET /status` -> estado de servicios (livekit, gemini, skills, tools, gog)
+`ENABLED_SKILLS` permite activar/desactivar skills opcionales. El grupo `core` siempre está activo.
 
-### GOG (Gmail/Calendar)
+## Integración GOG (Gmail/Calendar)
 
-Primero registra las credenciales OAuth de Google (client secret):
-
-Guarda tu `client_secret.json` en `backend/credentials/` (o usa una ruta absoluta segura).
+1. Guarda `client_secret.json` en `backend/credentials/` (directorio local, no versionado).
+2. Registra credenciales OAuth:
 
 ```bash
 ./bin/gogcli/gog auth credentials /path/to/client_secret.json
 ```
 
-Despues autoriza la cuenta y servicios:
+3. Autoriza la cuenta:
 
 ```bash
 ./bin/gogcli/gog auth add you@gmail.com --services gmail,calendar
 ```
 
-Notas:
+## Memoria curada personal
 
-- El directorio `backend/credentials/` es local para secretos OAuth y **no se sube a Git**.
-- No compartas ni subas `client_secret.json` ni tokens de acceso.
+Ruta: `backend/data/memory/`
 
-### Obsidian (vault local)
-
-Configura el path del vault para habilitar tools de notas/tareas:
-
-```bash
-export OBSIDIAN_VAULT_PATH="$HOME/Documents/Obsidian"
-export OBSIDIAN_ALLOWED_BASE_DIRS="$HOME/obsidean:$HOME/Documents"
-```
-
-### Activar/Desactivar skills
-
-Usa `ENABLED_SKILLS` para controlar qué skills y tools opcionales están activas.
-
-```bash
-# Todas activas (por defecto): dejar vacío
-export ENABLED_SKILLS=""
-
-# Solo GOG + Obsidian
-export ENABLED_SKILLS="gog,obsidian-tasks"
-```
-
-`core` (weather/time/search) permanece siempre activo.
-
-### Seguridad (Obsidian)
-
-- El agente no debe borrar bóvedas ni notas de Obsidian.
-- Las operaciones destructivas por `execute_command` están bloqueadas por seguridad.
-
-## chat-web (widget embebido)
-
-```bash
-cd chat-web
-npm install
-npm run dev
-```
-
-Abre `http://localhost:3000` y conecta el widget.
-
-## chat-web-full (cliente web completo)
-
-```bash
-cd chat-web-full
-npm install
-npm run dev
-```
-
-Abre `http://localhost:3000` para usar el cliente full page (sin burbuja).
-
-## Documentación
-
-- [SPEC.md](./SPEC.md) - Especificación técnica
-- [AGENTS.md](./AGENTS.md) - Instrucciones para agentes
-- [MEMORIA.md](./MEMORIA.md) - Estado del proyecto
-- [CHANGELOG.md](./CHANGELOG.md) - Registro de cambios
-
-## Memoria curada (personal)
-
-El agente usa memoria en `backend/data/memory/`:
-
-- `SOUL.md` -> identidad y personalidad del agente (Name/Tone/Style/Role)
-- `RULES.md` -> reglas operativas base
+- `SOUL.md` -> personalidad/identidad del agente
+- `RULES.md` -> reglas operativas
 - `USER.md` -> perfil y preferencias del usuario
-- `MEMORY.md` -> notas de sesiones y resumen de largo plazo
+- `MEMORY.md` -> resumen y continuidad de sesiones
 
-Puedes personalizar al agente con lenguaje natural, por ejemplo:
-
-- `Te llamas Niobe`
-- `Tu tono es agradable y profesional`
-- `Responde de forma breve y tecnica`
-- `Actua como mi asistente personal para correo, calendario y tareas`
-
-Tambien puedes usar modo explicito:
+Puedes configurar personalidad en lenguaje natural o con comando explícito:
 
 ```bash
 config agente nombre=Niobe tono=profesional estilo=conciso rol=asistente personal
 ```
 
-Si faltan campos de personalidad al iniciar, el agente te lo indicara y puedes decir `usa por defecto`.
+## Qué se sube y qué no
+
+Sí se sube:
+
+- Código fuente
+- `*.env.example`
+- Documentación
+
+No se sube:
+
+- `.env.local`, `.env`, secretos y credenciales OAuth
+- `backend/credentials/`
+- `node_modules/`, `.next/`, `.venv/`
+- Bases locales (`*.db`)
+
+## Comprobación rápida antes de publicar
+
+```bash
+git status
+git ls-files "*.env.local" "*.env" "*.db"
+git ls-files "**/node_modules/*" "**/.next/*"
+```
+
+## Documentación del proyecto
+
+- `SPEC.md` -> especificación técnica y alcance
+- `MEMORIA.md` -> estado funcional actual
+- `CHANGELOG.md` -> historial de cambios
+- `AGENTS.md` -> guía operativa para agentes AI

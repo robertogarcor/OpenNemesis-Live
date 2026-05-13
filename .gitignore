@@ -45,3 +45,7 @@ bin/gogcli/*
 
 # Credentials (OAuth, API keys, etc.)
 backend/credentials/
+
+# Frontend build and dependencies (recursive safety)
+**/node_modules/
+**/.next/

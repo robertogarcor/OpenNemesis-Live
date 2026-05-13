@@ -49,7 +49,7 @@ El agente dispone de 13 tools:
 
 ## Integración GOG
 
-- **Autenticación**: `./bin/gogcli/gog auth add fontflorida1093@gmail.com --services gmail,calendar`
+- **Autenticación**: `./bin/gogcli/gog auth add tu-email@gmail.com --services gmail,calendar`
 - **Servicios activos**: Gmail, Calendar
 - **Binario**: `bin/gogcli/gog` con permisos de ejecución
 - **Configuración**: GOGCLI_PATH en .env.local
