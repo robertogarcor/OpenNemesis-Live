@@ -58,7 +58,7 @@ El agente dispone de 13 tools:
 
 | Servicio | Estado |
 |----------|--------|
-| LiveKit Cloud | ✅ Conectado |
+| LiveKit Cloud (recomendado) / self-hosted (alternativo) | ✅ Soportado |
 | Gemini | ✅ Configurado |
 | Tools (13) | ✅ Disponibles |
 | GOG | ✅ Autenticado |
@@ -90,9 +90,3 @@ El agente dispone de 13 tools:
 - AGENTS.md: Guías para agentes AI
 - MEMORIA.md: Estado actual
 - CHANGELOG.md: Registro de cambios
-
-## Próximos Pasos
-
-1. Probar chat-web-full en desktop y movil
-2. Ajustes visuales finales entre cliente embebido y full page
-3. Desplegar en Vercel

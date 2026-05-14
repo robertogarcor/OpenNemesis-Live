@@ -86,6 +86,37 @@ npm run dev
 
 Cada servicio lee su propio `.env.local`.
 
+## LiveKit: Cloud + Self-hosted
+
+### Cloud (recomendado)
+
+1. Crea cuenta en LiveKit Cloud: `https://livekit.com/`
+2. Crea un proyecto en el portal.
+3. Copia `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`.
+4. Pega esas variables en `backend/.env.local`.
+5. Arranca backend y verifica estado con `GET /status`.
+
+Referencias:
+
+- `https://docs.livekit.io/intro/overview/`
+- `https://docs.livekit.io/agents/start/voice-ai/`
+- `https://docs.livekit.io/agents/playground/` (Playground para probar el agente)
+
+### Self-hosted (alternativa)
+
+1. Despliega un servidor LiveKit propio.
+2. Arranca el servidor LiveKit local siguiendo la guia oficial.
+3. Usa la URL y credenciales de ese servidor en `backend/.env.local`.
+4. Arranca el agente con `python backend/main.py dev`.
+5. Verifica conectividad con `GET /status`.
+
+Referencias:
+
+- `https://github.com/livekit`
+- `https://docs.livekit.io/transport/self-hosting/local/`
+
+Nota: el código del agente no cambia entre Cloud y self-hosted; cambia la infraestructura (operación, TLS, red y mantenimiento).
+
 ## Tools disponibles
 
 - `weather`, `time`, `search`
@@ -155,3 +186,9 @@ git ls-files "**/node_modules/*" "**/.next/*"
 - `MEMORIA.md` -> estado funcional actual
 - `CHANGELOG.md` -> historial de cambios
 - `AGENTS.md` -> guía operativa para agentes AI
+
+## Recursos oficiales LiveKit
+
+- `https://livekit.com/`
+- `https://github.com/livekit`
+- `https://github.com/livekit`

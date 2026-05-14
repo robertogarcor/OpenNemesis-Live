@@ -9,14 +9,14 @@ Asistente personal de voz multimodal basado en LiveKit. El usuario se conecta de
 - **Voz & Tiempo Real:** LiveKit Agents SDK (Python).
 - **Cliente Web:** LiveKit JavaScript Client (agent-starter-embed).
 - **Hosting Frontend:** Vercel (gratis).
-- **LiveKit:** LiveKit Cloud (self-hosted opcional).
+- **LiveKit:** LiveKit Cloud (recomendado) o LiveKit Server self-hosted (alternativo).
 - **Audio TTS/STT:** edge-tts y capacidades nativas de Gemini.
 - **Base de Datos:** SQLite (aiosqlite) para persistencia de historial.
 
 ## 3. Arquitectura y Flujo de Datos
 
 ### 3.1 Componentes Principales
-- **Cliente Web (Frontend):** Interfaz web con dos modos: widget embebido (`chat-web`) y cliente full page (`chat-web-full`). Ambos funcionan en navegador y móvil y se conectan directamente a LiveKit Cloud.
+- **Cliente Web (Frontend):** Interfaz web con dos modos: widget embebido (`chat-web`) y cliente full page (`chat-web-full`). Ambos funcionan en navegador y móvil y se conectan a infraestructura LiveKit (Cloud recomendado o self-hosted).
 - **LiveKit Agent (Backend de voz):** Proceso Python que se une a la sala cuando el usuario se conecta.
 - **Base de datos:** SQLite con historial de conversaciones.
 - **Memoria curada en archivos:** capa Markdown en `backend/data/memory` con `SOUL.md`, `RULES.md`, `USER.md` y `MEMORY.md` (perfil personal único).
@@ -45,7 +45,7 @@ Asistente personal de voz multimodal basado en LiveKit. El usuario se conecta de
 - `obsidian_tasks_in_vault(vault_path, status, limit)`: Listado de tareas de una bóveda específica.
 
 ### 4.2 Gestión de Sesiones
-- **Autenticación:** El cliente web obtiene token de LiveKit Cloud directamente.
+- **Autenticación:** El cliente web obtiene token de infraestructura LiveKit configurada (Cloud o self-hosted).
 - **Persistencia:** El agente mantiene historial en SQLite para contexto de conversación.
 - **Memoria híbrida:** SQLite como fuente de verdad + archivos Markdown curados para contexto de largo plazo con menor consumo de tokens.
 - **Feature Flags de skills:** `ENABLED_SKILLS` controla carga de skills y tools opcionales.
@@ -85,6 +85,6 @@ En cada avance del proyecto se debe mantener:
 3. Finalizar sesión → Actualizar toda documentación.
 
 ## 8. Servicios Externos
-- **LiveKit Cloud:** Proveedor de la infraestructura de voz/video.
+- **LiveKit Cloud (recomendado) / LiveKit self-hosted (alternativo):** Infraestructura de voz/video en tiempo real.
 - **Google Gemini:** Modelo de IA para procesamiento de voz.
 - **GOG CLI:** Integración con Google Workspace (Gmail, Calendar).
