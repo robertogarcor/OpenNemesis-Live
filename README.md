@@ -13,6 +13,18 @@ Asistente personal de voz multimodal con LiveKit + Gemini, orientado a productiv
   - Memoria curada en Markdown (`SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md`)
 - API opcional de observabilidad en `backend/api.py` (`/health`, `/status`)
 
+## Capturas
+
+### Interfaces disponibles
+
+| Widget embebido (popup) | Cliente full-page |
+|---|---|
+| ![OpenNemesis widget chat](Images/Chat-Web-Embed_03.png) | ![OpenNemesis full page chat](Images/Chat-Web-Embed-Full_04.png) |
+
+### Vista general
+
+![OpenNemesis widget overview](Images/Chat-Web-Embed_04.png)
+
 ## Arquitectura
 
 Cliente Web <-> LiveKit Cloud <-> Agente de Voz (Python)
