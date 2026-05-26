@@ -199,6 +199,10 @@ git ls-files "**/node_modules/*" "**/.next/*"
 - `CHANGELOG.md` -> historial de cambios
 - `AGENTS.md` -> guía operativa para agentes AI
 
+## Créditos
+
+Basado en ejemplos de LiveKit, adaptados para este proyecto.
+
 ## Recursos oficiales LiveKit
 
 - `https://livekit.com/`
